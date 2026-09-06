@@ -15,6 +15,7 @@ against that.
 - `CONTEXT.md` — vocabulary. `docs/adr/` — decisions and the reasons for them.
 - `PRD.md` — the brief, once it exists. Read before building.
 - `docs/agents/` — where issues (`.scratch/<feature>/`) and domain docs live.
+- `AGENTS.md` — Next.js 16 differs from training data; read it before writing.
 
 ## Settled
 
@@ -27,6 +28,9 @@ do not route around it.
 - Every risk flag cites the exact sentence it came from. A flag whose source
   sentence cannot be shown is a bug, not a degraded result.
 - The model is called through OpenRouter.
+- pnpm. Next.js App Router, TypeScript, Tailwind, `src/`. `.scratch/` is
+  gitignored (issues stay local). Commit each coherent step to `main`.
+- Default model: `anthropic/claude-sonnet-5`.
 
 ## Scope
 
@@ -51,9 +55,6 @@ citation is worthless when the text it points at was misread.
 
 ## Open decisions — ask, do not pick
 
-Undecided as of 2026-08-28. Stop and ask rather than picking a default.
+Undecided as of 2026-09-06. Stop and ask rather than picking a default.
 
-- Package manager and scaffold flags.
 - Supabase local CLI with versioned migrations vs. a hosted project only.
-- Which OpenRouter model is the default.
-- Whether to commit during an unattended build, and on which branch.
