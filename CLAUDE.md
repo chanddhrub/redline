@@ -29,7 +29,7 @@ do not route around it.
   sentence cannot be shown is a bug, not a degraded result.
 - The model is called through OpenRouter.
 - pnpm. Next.js App Router, TypeScript, Tailwind, `src/`. `.scratch/` is
-  gitignored (issues stay local). Commit each coherent step to `main`.
+  tracked (issues live in the repo). Commit each coherent step to `main`.
 - Default model: `anthropic/claude-sonnet-5`.
 
 ## Scope
