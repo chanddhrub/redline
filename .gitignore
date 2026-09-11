@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable: third-party craft references (downloaded, not ours to redistribute)
+# and ephemeral decision-page logs. Briefs, DESIGN tokens and our own review
+# captures are tracked.
+/.impeccable/review/qualitybar-*.webp
+/.impeccable/questions/

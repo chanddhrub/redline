@@ -1,26 +1,240 @@
 @import "tailwindcss";
 
+/* ── The Session Sleeve ───────────────────────────────────────────────────
+   Spot orange is the ground, not an accent. Ink black is Redline's voice.
+   Warm cream is the document's paper and appears only inside punched
+   windows. Nothing here carries meaning by hue alone.                     */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --spot: #ff5a1f;
+  --ink: #0a0a0a;
+  --paper: #fff1e0;
+  --burnt: #4a1200; /* secondary on orange — 4.89:1, tinted from the hue */
+  --tint: #ff8a50;
+  --peach: #ffc7a6;
+  --rule: 1px;
+  --tilt: -2.6deg;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-spot: var(--spot);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-burnt: var(--burnt);
+  --font-display: var(--font-anton);
+  --font-voice: var(--font-archivo);
+  --font-document: var(--font-tinos);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--spot);
+  color-scheme: light;
+  scrollbar-color: var(--ink) var(--spot);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--spot);
+  color: var(--ink);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Browser surfaces belong to the design system too. */
+::selection {
+  background: var(--ink);
+  color: var(--spot);
+}
+.sheet ::selection {
+  background: var(--spot);
+  color: var(--ink);
+}
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 0;
+}
+.on-ink :focus-visible,
+.on-ink:focus-visible {
+  outline-color: var(--spot);
+}
+a {
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1.5px;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--spot);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 3px solid var(--spot);
+}
+.sheet-scroll::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+.sheet-scroll::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 3px solid var(--paper);
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────── */
+
+.display {
+  font-family: var(--font-anton), ui-sans-serif, sans-serif;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.label {
+  font-family: var(--font-archivo), ui-sans-serif, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.document {
+  font-family: var(--font-tinos), Times, "Times New Roman", serif;
+  line-height: 1.62;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Materials ────────────────────────────────────────────────────────── */
+
+.tilted {
+  transform: rotate(var(--tilt));
+  transform-origin: left center;
+}
+
+.hatch {
+  background-image: repeating-linear-gradient(
+    -52deg,
+    var(--spot) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* The screen that marks anything not taken from the reader's document.
+   Light enough to set text on and still visible in greyscale. */
+.halftone {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink) 24%, transparent) 1.25px,
+    transparent 1.25px
+  );
+  background-size: 5px 5px;
+}
+
+/* The screen that sits over everything not currently windowed. Light
+   enough that the document still reads as a document. */
+.halftone-paper {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink) 22%, transparent) 1.1px,
+    transparent 1.1px
+  );
+  background-size: 5px 5px;
+  background-color: color-mix(in srgb, var(--paper) 38%, transparent);
+}
+
+/* Paper stock. The sheet is a material, not a white box. */
+.sheet {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--burnt) 7%, transparent) 0.6px,
+    transparent 0.6px
+  );
+  background-size: 3px 3px;
+}
+
+/* Skewed parallelogram controls — the world's own button vocabulary. */
+.slug {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 100%;
+  padding: 0.95rem 4.6rem 0.95rem 1.8rem;
+  transform: skewX(-11deg);
+  background: var(--ink);
+  color: var(--spot);
+  border: 2px solid var(--ink);
+  transition: background 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slug > * {
+  transform: skewX(11deg);
+}
+.slug:hover {
+  background: var(--spot);
+  color: var(--ink);
+}
+.slug-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+.slug-ghost:hover {
+  background: var(--ink);
+  color: var(--spot);
+}
+.slug-hatch {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 3.2rem;
+  pointer-events: none;
+}
+
+/* Severity: length and stamp, never hue. Survives greyscale. */
+.sev-bar {
+  display: block;
+  height: 9px;
+  background: currentColor;
+}
+
+/* The window frame that travels over a document that never moves. */
+.veil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  transition: top 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.window-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transition: top 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.window-mark::before {
+  content: "";
+  position: absolute;
+  left: -1.45rem;
+  top: -2px;
+  bottom: -2px;
+  width: 7px;
+  background: var(--spot);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .veil,
+  .window-mark {
+    transition: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
 }

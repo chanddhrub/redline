@@ -1,0 +1,345 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-11T00:00:00.000Z",
+  "title": "Design System: Redline",
+  "extensions": {
+    "colorMeta": {
+      "spot": {
+        "role": "primary",
+        "displayName": "Spot Orange",
+        "canonical": "#FF5A1F",
+        "tonalRamp": [
+          "oklch(20% 0.09 40)",
+          "oklch(30% 0.13 40)",
+          "oklch(40% 0.17 40)",
+          "oklch(50% 0.20 40)",
+          "oklch(68% 0.204 40)",
+          "oklch(78% 0.15 40)",
+          "oklch(87% 0.09 40)",
+          "oklch(95% 0.04 40)"
+        ]
+      },
+      "ink": {
+        "role": "secondary",
+        "displayName": "Ink Black",
+        "canonical": "#0A0A0A",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(25% 0 0)",
+          "oklch(35% 0 0)",
+          "oklch(45% 0 0)",
+          "oklch(55% 0 0)",
+          "oklch(70% 0 0)",
+          "oklch(85% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "paper": {
+        "role": "tertiary",
+        "displayName": "Paper Cream",
+        "canonical": "#FFF1E0",
+        "tonalRamp": [
+          "oklch(20% 0.02 70)",
+          "oklch(32% 0.03 70)",
+          "oklch(44% 0.035 70)",
+          "oklch(56% 0.04 70)",
+          "oklch(68% 0.04 70)",
+          "oklch(80% 0.035 70)",
+          "oklch(90% 0.03 70)",
+          "oklch(96% 0.025 70)"
+        ]
+      },
+      "burnt": {
+        "role": "neutral",
+        "displayName": "Burnt Umber",
+        "canonical": "#4A1200",
+        "tonalRamp": [
+          "oklch(15% 0.06 40)",
+          "oklch(26% 0.09 40)",
+          "oklch(36% 0.11 40)",
+          "oklch(46% 0.12 40)",
+          "oklch(56% 0.12 40)",
+          "oklch(70% 0.10 40)",
+          "oklch(84% 0.07 40)",
+          "oklch(94% 0.03 40)"
+        ]
+      },
+      "tint": {
+        "role": "neutral",
+        "displayName": "Spot Tint",
+        "canonical": "#FF8A50",
+        "tonalRamp": [
+          "oklch(22% 0.08 45)",
+          "oklch(33% 0.11 45)",
+          "oklch(44% 0.13 45)",
+          "oklch(55% 0.15 45)",
+          "oklch(66% 0.16 45)",
+          "oklch(76% 0.13 45)",
+          "oklch(87% 0.08 45)",
+          "oklch(95% 0.035 45)"
+        ]
+      },
+      "peach": {
+        "role": "neutral",
+        "displayName": "Peach",
+        "canonical": "#FFC7A6",
+        "tonalRamp": [
+          "oklch(22% 0.05 50)",
+          "oklch(33% 0.07 50)",
+          "oklch(44% 0.08 50)",
+          "oklch(55% 0.09 50)",
+          "oklch(67% 0.09 50)",
+          "oklch(78% 0.08 50)",
+          "oklch(87% 0.06 50)",
+          "oklch(95% 0.03 50)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single hero statement, rotated -2.6deg over three lines with a 3px hairline rule tracking the angle."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section heads in condensed caps, held level. Only the hero is angled."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Definition terms in ruled lists, such as each entry in the refusals table."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Redline's prose voice. Measured at 62-68ch, never wider."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Finding explanations, counter-offer text and footnotes, capped at 62ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Micro-labels: finding codes, severity words, panel headers, char-offset receipts, button faces. Never used as an eyebrow above a heading."
+      },
+      "document": {
+        "displayName": "Document",
+        "purpose": "The contract's own words. Tinos means the document is speaking; this is the register cue that survives greyscale."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-travel",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The only easing curve in the system. Used for the travelling window and for control state transitions."
+      },
+      {
+        "name": "duration-window",
+        "value": "520ms",
+        "purpose": "Veil and window-bracket travel when a finding is chosen. Removed entirely under prefers-reduced-motion."
+      },
+      {
+        "name": "duration-control",
+        "value": "180ms",
+        "purpose": "Background and colour inversion on slug controls."
+      },
+      {
+        "name": "duration-row",
+        "value": "200ms",
+        "purpose": "Colour transition on finding rows as the active row inverts to an ink plate."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ],
+    "materials": [
+      {
+        "name": "hatch",
+        "value": "repeating-linear-gradient(-52deg, #FF5A1F 0 3px, transparent 3px 7px)",
+        "purpose": "Trailing fill panel on primary controls. The world's button texture."
+      },
+      {
+        "name": "halftone",
+        "value": "radial-gradient(color-mix(in srgb, #0A0A0A 24%, transparent) 1.25px, transparent 1.25px) 0 0 / 5px 5px",
+        "purpose": "Marks material that is not from the reader's document. Rail on the enforceability panel."
+      },
+      {
+        "name": "halftone-paper",
+        "value": "radial-gradient(color-mix(in srgb, #0A0A0A 22%, transparent) 1.1px, transparent 1.1px) 0 0 / 5px 5px, color-mix(in srgb, #FFF1E0 38%, transparent)",
+        "purpose": "The veil over document text outside the active window. Screened text still measures 5.4:1."
+      },
+      {
+        "name": "sheet-stock",
+        "value": "radial-gradient(color-mix(in srgb, #4A1200 7%, transparent) 0.6px, transparent 0.6px) 0 0 / 3px 3px",
+        "purpose": "Paper speckle. The sheet is a material, not a white box."
+      }
+    ],
+    "contrast": [
+      { "pair": "ink on spot", "ratio": "6.35:1", "status": "pass AA" },
+      { "pair": "ink on paper", "ratio": "17.8:1", "status": "pass AAA" },
+      { "pair": "burnt on spot", "ratio": "4.89:1", "status": "pass AA, only permitted secondary on orange" },
+      { "pair": "spot on ink", "ratio": "6.35:1", "status": "pass AA" },
+      { "pair": "screened document text under the 38% paper veil", "ratio": "5.4:1", "status": "pass AA" },
+      { "pair": "paper on spot", "ratio": "2.81:1", "status": "FAIL at any size — prohibited for text" }
+    ],
+    "coverageGaps": [
+      {
+        "name": "Duotone halftone photographic crop",
+        "status": "unfilled",
+        "note": "The world's loudest native device — a duotone ink/spot photographic crop bleeding off a corner — is specified but unused. No image generation was available in the build session and a CSS approximation of a photograph was refused as imitation material. The photographic register exists in this system and is unfilled; fill it with a real duotone raster rather than inferring the world has no imagery."
+      },
+      {
+        "name": "Hover states",
+        "status": "specified but unverified",
+        "note": "Slug hover inversion and the 10%-ink wash on inactive finding rows exist in CSS but were never visually verified — headless capture cannot simulate hover. Provisional, not canon."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Slug (Primary Button)",
+      "kind": "button",
+      "refersTo": "slug-primary",
+      "description": "The world's button vocabulary: a skewed parallelogram slab with upright contents and a hatch panel at the trailing edge.",
+      "html": "<a href=\"#\" class=\"ds-slug ds-slug-primary\"><span>Try it on your document</span><span class=\"ds-slug-hatch\" aria-hidden=\"true\"></span></a>",
+      "css": ".ds-slug { position: relative; display: inline-flex; align-items: center; gap: 0.9rem; max-width: 100%; padding: 0.95rem 4.6rem 0.95rem 1.8rem; transform: skewX(-11deg); border: 2px solid #0A0A0A; border-radius: 0; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 180ms cubic-bezier(0.16,1,0.3,1), color 180ms cubic-bezier(0.16,1,0.3,1); } .ds-slug > * { transform: skewX(11deg); } .ds-slug-primary { background: #0A0A0A; color: #FF5A1F; } .ds-slug-primary:hover { background: #FF5A1F; color: #0A0A0A; } .ds-slug:focus-visible { outline: 3px solid #0A0A0A; outline-offset: 3px; border-radius: 0; } .ds-slug-hatch { position: absolute; inset: 0 0 0 auto; width: 3.2rem; pointer-events: none; background-image: repeating-linear-gradient(-52deg, #FF5A1F 0 3px, transparent 3px 7px); }"
+    },
+    {
+      "name": "Slug (Ghost)",
+      "kind": "button",
+      "refersTo": "slug-ghost",
+      "description": "Secondary action on the orange field: the same slab, outlined only, inverting to ink on hover.",
+      "html": "<a href=\"#\" class=\"ds-slug ds-slug-ghost\"><span>What a clean document returns</span></a>",
+      "css": ".ds-slug { position: relative; display: inline-flex; align-items: center; gap: 0.9rem; padding: 0.95rem 4.6rem 0.95rem 1.8rem; transform: skewX(-11deg); border: 2px solid #0A0A0A; border-radius: 0; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none; transition: background 180ms cubic-bezier(0.16,1,0.3,1), color 180ms cubic-bezier(0.16,1,0.3,1); } .ds-slug > * { transform: skewX(11deg); } .ds-slug-ghost { background: transparent; color: #0A0A0A; } .ds-slug-ghost:hover { background: #0A0A0A; color: #FF5A1F; } .ds-slug-ghost:focus-visible { outline: 3px solid #0A0A0A; outline-offset: 3px; }"
+    },
+    {
+      "name": "Finding Row",
+      "kind": "custom",
+      "refersTo": "finding-row",
+      "description": "A ranked finding on the orange field. Severity is a bar whose length varies (44px Critical, 22px High) plus a stamped code plus the spelled word — never hue.",
+      "html": "<ul class=\"ds-findings\"><li><button type=\"button\" class=\"ds-find-row ds-find-active\" aria-pressed=\"true\"><span class=\"ds-find-head\"><span class=\"ds-find-code\">CR-1</span><span class=\"ds-sev\" style=\"width:44px\" aria-hidden=\"true\"></span><span class=\"ds-find-code\">Critical</span></span><span class=\"ds-find-title\">Eighteen-month non-compete, any competitor</span><span class=\"ds-find-cite\">Quote located &middot; chars 1,259&ndash;1,567</span></button></li><li><button type=\"button\" class=\"ds-find-row\" aria-pressed=\"false\"><span class=\"ds-find-head\"><span class=\"ds-find-code\">HI-2</span><span class=\"ds-sev\" style=\"width:22px\" aria-hidden=\"true\"></span><span class=\"ds-find-code\">High</span></span><span class=\"ds-find-title\">Signing bonus repayable in full, gross</span><span class=\"ds-find-cite\">Quote located &middot; chars 391&ndash;593</span></button></li></ul>",
+      "css": ".ds-findings { list-style: none; margin: 0; padding: 0; } .ds-findings li { border-bottom: 1px solid rgba(10,10,10,0.35); } .ds-find-row { display: block; width: 100%; padding: 16px; text-align: left; background: transparent; color: #0A0A0A; border: 0; border-radius: 0; cursor: pointer; transition: background-color 200ms cubic-bezier(0.16,1,0.3,1); } .ds-find-row:hover { background: rgba(10,10,10,0.10); } .ds-find-row:focus-visible { outline: 3px solid #0A0A0A; outline-offset: 3px; } .ds-find-active { background: #0A0A0A; color: #FF5A1F; } .ds-find-active:focus-visible { outline-color: #FF5A1F; } .ds-find-head { display: flex; align-items: center; gap: 12px; } .ds-find-code { font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-variant-numeric: tabular-nums; } .ds-sev { display: block; height: 9px; flex: none; background: currentColor; } .ds-find-title { display: block; margin-top: 8px; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 1.0625rem; font-weight: 600; line-height: 1.375; } .ds-find-cite { display: block; margin-top: 8px; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-variant-numeric: tabular-nums; color: #4A1200; } .ds-find-active .ds-find-cite { color: #FF5A1F; }"
+    },
+    {
+      "name": "Cited Sentence Panel",
+      "kind": "card",
+      "refersTo": "panel-cited",
+      "description": "The reader's own words on cream stock inside a 2px ink frame, set in Tinos. Cream plus serif means: this came from your document.",
+      "html": "<div class=\"ds-cite\"><p class=\"ds-cite-head\">CR-1 &middot; Non-compete &middot; from your document</p><p class=\"ds-cite-body\">&ldquo;&hellip;for a period of eighteen (18) months following the termination of your employment for any reason&hellip;&rdquo;</p></div>",
+      "css": ".ds-cite { border: 2px solid #0A0A0A; border-radius: 0; background-color: #FFF1E0; background-image: radial-gradient(color-mix(in srgb, #4A1200 7%, transparent) 0.6px, transparent 0.6px); background-size: 3px 3px; color: #0A0A0A; } .ds-cite-head { margin: 0; padding: 8px 16px; border-bottom: 2px solid #0A0A0A; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; } .ds-cite-body { margin: 0; padding: 12px 16px; font-family: Tinos, Times, 'Times New Roman', serif; font-size: 0.9375rem; line-height: 1.62; }"
+    },
+    {
+      "name": "Not-From-Your-Document Panel",
+      "kind": "card",
+      "refersTo": "panel-not-from-document",
+      "description": "The labelled enforceability layer. Dashed 2px border plus a halftone rail plus Archivo copy: three independent cues that this text is not from the contract. It never changes a flag's severity.",
+      "html": "<div class=\"ds-notdoc\"><p class=\"ds-notdoc-head\">Not from your document &middot; general context for California</p><div class=\"ds-notdoc-row\"><div class=\"ds-notdoc-rail\" aria-hidden=\"true\"></div><p class=\"ds-notdoc-body\">California generally does not enforce employee non-competes. This does not change the sentence above, and it does not change its severity &mdash; the clause still says what it says.</p></div></div>",
+      "css": ".ds-notdoc { border: 2px dashed #0A0A0A; border-radius: 0; background: #FFF1E0; color: #0A0A0A; } .ds-notdoc-head { margin: 0; padding: 8px 16px; border-bottom: 2px dashed #0A0A0A; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; } .ds-notdoc-row { display: flex; align-items: stretch; } .ds-notdoc-rail { width: 36px; flex: none; border-right: 2px dashed #0A0A0A; background-image: radial-gradient(color-mix(in srgb, #0A0A0A 24%, transparent) 1.25px, transparent 1.25px); background-size: 5px 5px; } .ds-notdoc-body { margin: 0; padding: 12px 16px; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.625; }"
+    },
+    {
+      "name": "Travelling Window (Document Sheet)",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "The signature mechanic. The contract sits on cream stock and never moves; Redline's veils and 2px bracket travel over it in 520ms to crop one sentence at full reading scale.",
+      "html": "<div class=\"ds-sheet\"><div class=\"ds-sheet-inner\"><p class=\"ds-doc\">The Employee agrees that during employment and for a period of twelve months thereafter, the Employee shall not solicit any customer of the Company.</p><p class=\"ds-doc ds-doc-win\">For a period of eighteen (18) months following the termination of your employment for any reason, you will not provide services to any competitor of the Company.</p><p class=\"ds-doc\">Any dispute arising out of your employment shall be resolved by final and binding arbitration in Santa Clara County, California.</p><div class=\"ds-veil ds-veil-top\" aria-hidden=\"true\"></div><div class=\"ds-veil ds-veil-bottom\" aria-hidden=\"true\"></div><div class=\"ds-window\" aria-hidden=\"true\"></div></div></div>",
+      "css": ".ds-sheet { background-color: #FFF1E0; background-image: radial-gradient(color-mix(in srgb, #4A1200 7%, transparent) 0.6px, transparent 0.6px); background-size: 3px 3px; color: #0A0A0A; overflow: hidden; } .ds-sheet-inner { position: relative; padding: 28px 32px 28px 48px; } .ds-doc { margin: 0 0 20px 0; font-family: Tinos, Times, 'Times New Roman', serif; font-size: 0.9375rem; line-height: 1.62; } .ds-doc-win { margin-bottom: 20px; } .ds-veil { position: absolute; left: 0; right: 0; pointer-events: none; background-image: radial-gradient(color-mix(in srgb, #0A0A0A 22%, transparent) 1.1px, transparent 1.1px); background-size: 5px 5px; background-color: color-mix(in srgb, #FFF1E0 38%, transparent); transition: top 520ms cubic-bezier(0.16,1,0.3,1), height 520ms cubic-bezier(0.16,1,0.3,1); } .ds-veil-top { top: 0; height: 74px; } .ds-veil-bottom { top: 174px; bottom: 0; } .ds-window { position: absolute; left: 0; right: 0; top: 74px; height: 100px; pointer-events: none; border-top: 2px solid #0A0A0A; border-bottom: 2px solid #0A0A0A; transition: top 520ms cubic-bezier(0.16,1,0.3,1), height 520ms cubic-bezier(0.16,1,0.3,1); } .ds-window::before { content: ''; position: absolute; left: -23px; top: -2px; bottom: -2px; width: 7px; background: #FF5A1F; } @media (prefers-reduced-motion: reduce) { .ds-veil, .ds-window { transition: none; } }"
+    },
+    {
+      "name": "Coverage Receipt",
+      "kind": "card",
+      "refersTo": "stamp",
+      "description": "What a clean document returns. Sits on a full-bleed ink plate with a 2px cream frame; findings column in spot label type. Never an empty screen.",
+      "html": "<div class=\"ds-plate\"><div class=\"ds-receipt\"><p class=\"ds-receipt-head\">Coverage receipt &middot; clean document</p><dl class=\"ds-receipt-body\"><div class=\"ds-receipt-row\"><dt>Non-compete / non-solicit</dt><dd>No clause found</dd></div><div class=\"ds-receipt-row\"><dt>Mandatory arbitration and class-action waiver</dt><dd>No clause found</dd></div><div class=\"ds-receipt-row\"><dt>IP assignment and moonlighting restrictions</dt><dd>Present, within ordinary scope</dd></div></dl></div></div>",
+      "css": ".ds-plate { background: #0A0A0A; color: #FFF1E0; padding: 24px; } .ds-receipt { border: 2px solid #FFF1E0; border-radius: 0; } .ds-receipt-head { margin: 0; padding: 8px 16px; background: #FFF1E0; color: #0A0A0A; border-bottom: 2px solid #FFF1E0; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; } .ds-receipt-body { margin: 0; padding: 8px 16px; } .ds-receipt-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid rgba(255,241,224,0.35); } .ds-receipt-row:last-child { border-bottom: 0; } .ds-receipt-row dt { font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; } .ds-receipt-row dd { margin: 0; color: #FF5A1F; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Masthead",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Boxed wordmark in condensed caps, a burnt-umber strapline, and a single underlined action. One 2px ink rule closes the band.",
+      "html": "<header class=\"ds-mast\"><div class=\"ds-mast-left\"><span class=\"ds-wordmark\">Redline</span><span class=\"ds-strap\">Read it before you sign it</span></div><a href=\"#\" class=\"ds-mast-link\">Try it</a></header><div class=\"ds-mast-rule\"></div>",
+      "css": ".ds-mast { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 32px; background: #FF5A1F; color: #0A0A0A; } .ds-mast-left { display: flex; align-items: baseline; gap: 16px; } .ds-wordmark { border: 2px solid #0A0A0A; padding: 6px 12px; font-family: Anton, ui-sans-serif, sans-serif; font-size: 1.5rem; line-height: 0.92; letter-spacing: -0.012em; text-transform: uppercase; } .ds-strap, .ds-mast-link { font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; } .ds-strap { color: #4A1200; } .ds-mast-link { color: #0A0A0A; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.22em; } .ds-mast-link:hover { background: #0A0A0A; color: #FF5A1F; } .ds-mast-link:focus-visible { outline: 3px solid #0A0A0A; outline-offset: 3px; } .ds-mast-rule { height: 2px; background: #0A0A0A; }"
+    },
+    {
+      "name": "Angled Display Headline",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The hero statement: condensed caps rotated -2.6deg from a left-centre origin, with a 3px hairline rule tracking the same angle. Nothing sits above it.",
+      "html": "<div class=\"ds-hero\"><h1 class=\"ds-display ds-tilt\">Every flag<br>shows its<br>sentence</h1><div class=\"ds-tilt ds-hero-rule\"></div></div>",
+      "css": ".ds-hero { background: #FF5A1F; color: #0A0A0A; padding: 40px 32px; overflow: hidden; } .ds-display { margin: 0; font-family: Anton, ui-sans-serif, sans-serif; font-weight: 400; font-size: clamp(2.5rem, 8vw, 7.5rem); line-height: 0.92; letter-spacing: -0.012em; text-transform: uppercase; text-wrap: balance; overflow-wrap: break-word; } .ds-tilt { transform: rotate(-2.6deg); transform-origin: left center; } .ds-hero-rule { margin-top: 20px; height: 3px; width: 100%; background: #0A0A0A; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Session Sleeve",
+    "overview": "Redline is printed, not rendered. The whole product sits on a flat field of spot orange run at full strength — ground, never accent — the way a Blue Note session sleeve commits its entire cover to one ink and lets black type do the work. There is no card stack floating over a neutral canvas, no soft surface hierarchy, no gradient. Depth exists only as two flat plates (orange field, ink plate) and one punched material (cream paper). A screen is either the field or a hole cut in it.\n\nThe world assigns every material a job and refuses to let materials drift. Ink black is Redline's own voice. Warm cream is the reader's document — it appears only inside a window punched into the field, never as a page background, never as a card. Halftone screens mark anything that did not come from the reader's document. The three typefaces are not a pairing exercise: Anton displays, Archivo speaks for Redline, Tinos is the contract's own words. Because register is carried by a typeface change rather than a colour, the distinction between \"your contract said this\" and \"Redline says this\" survives greyscale, photocopying and colour-blindness alike.\n\nDensity is high and the geometry is deliberately off-square: display lines rotate -2.6deg with a hairline rule tracking the same angle, controls are skewed parallelograms with hatch fills, and the document panel bleeds off the right edge instead of being politely contained. Confirmed anti-references: the legal-tech hero in all its forms — floating document mockup, feature triptych, tilted dashboard screenshot, logo wall, testimonial band, and any eyebrow or kicker line above a heading.",
+    "keyCharacteristics": [
+      "Spot orange as ground, at full saturation, across the whole product",
+      "Zero corner radius anywhere; borders are 1px, 2px or 3px hard rules",
+      "Three faces with three jobs; register is a typeface change, not a colour",
+      "Meaning never carried by hue alone — length, stamp and word carry severity",
+      "Off-angle display type (-2.6deg) and skewed (-11deg) controls",
+      "Flat: no shadows, no blur, no gradient fills except hatch and halftone screens"
+    ],
+    "rules": [
+      {
+        "name": "The No Cream On Orange Rule",
+        "body": "Paper cream is never set as text on the orange field — it computes 2.81:1 and fails AA even at large size. On orange, text is ink (6.35:1) or burnt umber (4.89:1). Nothing else.",
+        "section": "colors"
+      },
+      {
+        "name": "The Greyscale Rule",
+        "body": "No meaning may be carried by hue. Severity is a bar whose length varies (44px Critical, 22px High) plus a stamped code (CR-1, HI-2) plus the spelled word. Register is a typeface change. Print the screen in greyscale; if any distinction disappears, the design is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Is The Document Rule",
+        "body": "Cream means \"these are the reader's own words\". If a surface is cream, the text on it came from the uploaded document — or it is explicitly stamped as not having, on a dashed border with a halftone rail.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Registers Rule",
+        "body": "Tinos means the document is speaking; Archivo means Redline is speaking. Never set Redline's commentary in Tinos to look more legal, and never retype a quoted sentence in Archivo.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "Nothing sits above a heading. No kicker, no eyebrow, no category line. The uppercase Label style belongs inside panels, on buttons and on receipts — never as a standalone line introducing a headline.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Receipt Rule",
+        "body": "Every character offset, count and measured value is set in tabular figures so columns of evidence line up and can be compared.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Rule",
+        "body": "No box-shadow anywhere. A surface that needs to separate gets a 2px ink rule or an inverted plate. Hard offset \"sticker\" shadows are foreign to this world and are not a permitted substitute.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Screen Means Not-Yours Rule",
+        "body": "A halftone screen marks material that is not the reader's document speaking — either not currently windowed (halftone-paper) or not from the document at all (the halftone rail on the enforceability panel).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do run spot orange as the ground of new surfaces. Starting a screen on white or on a neutral grey puts it outside this world.",
+      "Do set the reader's own words in Tinos on cream and Redline's words in Archivo, so the register survives greyscale.",
+      "Do encode severity with bar length (44px / 22px), a stamped code and the spelled word, together — never with any one of the three alone.",
+      "Do use burnt umber for secondary text on orange, and keep it tinted from the hue; a grey here would read as a bug.",
+      "Do mark anything not from the reader's document with a halftone screen, a dashed 2px border, and an explicit label.",
+      "Do give every interactive element a 3px offset focus outline, switching to spot inside .on-ink regions.",
+      "Do keep prose measures at 62–68ch and set every number in tabular figures."
+    ],
+    "donts": [
+      "Don't set cream text on orange. It computes 2.81:1 and fails AA at any size. Ink or burnt umber only.",
+      "Don't add a corner radius, a box-shadow, a blur, or a gradient fill. The only patterned fills in this world are the -52deg hatch and the 5px halftone screens.",
+      "Don't animate, transform or reflow the document's own words. All motion belongs to Redline's layer, and all of it respects prefers-reduced-motion.",
+      "Don't place a kicker, eyebrow or category line above a heading.",
+      "Don't merge enforceability context into a cited flag, or let it alter a severity. The dashed border exists to keep them apart.",
+      "Don't build the legal-tech hero: floating document mockup, feature triptych, tilted dashboard screenshot, logo wall, testimonial band.",
+      "Don't introduce prices, customers, testimonials or benchmarks. None exist in this product, and demonstration content stays badged \"Sample — not a real contract\".",
+      "Don't use glyph icons or an icon font. This world's marks are typographic and geometric: stamped codes, rules, bars, hatch, halftone."
+    ]
+  }
+}
