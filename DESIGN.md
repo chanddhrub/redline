@@ -316,14 +316,19 @@ layer: dashed means "not from your document".
   so it reads as texture rather than noise.
 - **Focus:** 3px ink outline at 3px offset. Inside an `.on-ink` region the outline
   switches to spot orange so it stays visible against black. Verified in capture.
-- **Hover:** specified in CSS (primary and ghost invert ground and type over
-  180ms) but never visually verified in this build. Provisional, not canon.
+- **Hover:** both variants invert ground and type over 180ms on the system's
+  standard `cubic-bezier(0.16, 1, 0.3, 1)`. Primary goes ink-on-spot to
+  spot-ground with ink type; ghost fills to ink with spot type. Verified in
+  browser.
 
 ### Finding Rows
 - Full-width ruled list items separated by 1px ink hairlines at 35% opacity.
 - Each row carries, in order: the stamped code in tabular Label type, the severity
   bar, the severity word, the finding title in semibold Archivo, and a "Quote
   located · chars N–N" receipt in burnt umber.
+- **Hover (inactive rows only):** a 10%-ink wash over the orange field, 200ms on
+  the standard curve. The active ink plate does not react — it is already the
+  selected state. Verified in browser.
 - **Active:** the entire row inverts to an ink plate with spot type and marks
   itself `.on-ink`; its expansion opens below on an 8%-ink wash carrying a
   two-column measures table, the plain-English meaning, and the counter-offer.
@@ -398,6 +403,4 @@ specified by the world but unused in this build. No image generation was
 available and a CSS approximation of a photograph was refused as imitation
 material. The photographic register exists in this system and is simply unfilled;
 a later session should fill it with a real duotone raster rather than conclude the
-world has no imagery. Separately, hover states on `.slug` and on inactive finding
-rows are specified in CSS but were never visually verified (headless capture
-cannot hover); they are provisional, not canon. -->
+world has no imagery. -->

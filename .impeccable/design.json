@@ -149,8 +149,14 @@
       }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "lg", "value": "1024px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
     ],
     "materials": [
       {
@@ -175,23 +181,42 @@
       }
     ],
     "contrast": [
-      { "pair": "ink on spot", "ratio": "6.35:1", "status": "pass AA" },
-      { "pair": "ink on paper", "ratio": "17.8:1", "status": "pass AAA" },
-      { "pair": "burnt on spot", "ratio": "4.89:1", "status": "pass AA, only permitted secondary on orange" },
-      { "pair": "spot on ink", "ratio": "6.35:1", "status": "pass AA" },
-      { "pair": "screened document text under the 38% paper veil", "ratio": "5.4:1", "status": "pass AA" },
-      { "pair": "paper on spot", "ratio": "2.81:1", "status": "FAIL at any size — prohibited for text" }
+      {
+        "pair": "ink on spot",
+        "ratio": "6.35:1",
+        "status": "pass AA"
+      },
+      {
+        "pair": "ink on paper",
+        "ratio": "17.8:1",
+        "status": "pass AAA"
+      },
+      {
+        "pair": "burnt on spot",
+        "ratio": "4.89:1",
+        "status": "pass AA, only permitted secondary on orange"
+      },
+      {
+        "pair": "spot on ink",
+        "ratio": "6.35:1",
+        "status": "pass AA"
+      },
+      {
+        "pair": "screened document text under the 38% paper veil",
+        "ratio": "5.4:1",
+        "status": "pass AA"
+      },
+      {
+        "pair": "paper on spot",
+        "ratio": "2.81:1",
+        "status": "FAIL at any size — prohibited for text"
+      }
     ],
     "coverageGaps": [
       {
         "name": "Duotone halftone photographic crop",
         "status": "unfilled",
         "note": "The world's loudest native device — a duotone ink/spot photographic crop bleeding off a corner — is specified but unused. No image generation was available in the build session and a CSS approximation of a photograph was refused as imitation material. The photographic register exists in this system and is unfilled; fill it with a real duotone raster rather than inferring the world has no imagery."
-      },
-      {
-        "name": "Hover states",
-        "status": "specified but unverified",
-        "note": "Slug hover inversion and the 10%-ink wash on inactive finding rows exist in CSS but were never visually verified — headless capture cannot simulate hover. Provisional, not canon."
       }
     ]
   },
