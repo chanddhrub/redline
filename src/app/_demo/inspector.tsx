@@ -193,7 +193,7 @@ export function Inspector({
           className="sheet sheet-scroll relative h-[26rem] overflow-y-auto bg-paper sm:h-[32rem] lg:-mr-[5vw] lg:h-[38rem]"
         >
           <div ref={contentRef} className="relative px-5 py-7 pl-9 sm:px-8 sm:pl-12">
-            <p className="document text-[0.8125rem] uppercase tracking-[0.12em] text-ink/70">
+            <p className="document text-[0.9375rem] uppercase tracking-[0.12em] text-ink/70">
               {SAMPLE_LETTER.company}
             </p>
             <p className="document mt-1 text-base font-bold text-ink">

@@ -8,7 +8,13 @@ related_targets: []
 # App shell
 
 Scope: the frame at `/review` that holds intake, the result, the question box
-and red lines. Visitor mode: **Operate**. **Brief only — no screen built.**
+and red lines. Visitor mode: **Operate**.
+
+**Built 2026-09-11.** Intake is real for plain text — `parseDocument` and the
+analysis-request module are the two seams from ticket 01, under test. The
+result, the enforceability layer and the question box are not wired to anything
+and say so on screen, because the model call does not exist yet. A sample
+contract loads the whole frame with synthetic material for inspection.
 
 ## Job and audience
 

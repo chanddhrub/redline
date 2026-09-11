@@ -33,6 +33,36 @@ typography:
     fontWeight: 400
     lineHeight: 1.625
     letterSpacing: "normal"
+  headline-close:
+    fontFamily: "Anton, ui-sans-serif, sans-serif"
+    fontSize: "clamp(2.2rem, 6vw, 5rem)"
+    fontWeight: 400
+    lineHeight: 0.92
+    letterSpacing: "-0.012em"
+  display-mid:
+    fontFamily: "Anton, ui-sans-serif, sans-serif"
+    fontSize: "4.2rem"
+    fontWeight: 400
+    lineHeight: 0.92
+    letterSpacing: "-0.012em"
+  headline-mid:
+    fontFamily: "Anton, ui-sans-serif, sans-serif"
+    fontSize: "3rem"
+    fontWeight: 400
+    lineHeight: 0.92
+    letterSpacing: "-0.012em"
+  headline-close-mid:
+    fontFamily: "Anton, ui-sans-serif, sans-serif"
+    fontSize: "3.4rem"
+    fontWeight: 400
+    lineHeight: 0.92
+    letterSpacing: "-0.012em"
+  row-title:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 600
+    lineHeight: 1.375
+    letterSpacing: "normal"
   body-small:
     fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
@@ -121,6 +151,12 @@ components:
 ## Overview
 
 **Creative North Star: "The Session Sleeve"**
+
+Display type steps at breakpoints rather than flowing: the clamp on each
+display entry gives its base and its `lg` value, and the matching `-mid` entry
+is the `sm` step between them. Fluid display shrinks unpredictably inside a
+narrow column, and this world sets its display at a committed size or not at
+all.
 
 Redline is printed, not rendered. The whole product sits on a flat field of spot
 orange run at full strength — ground, never accent — the way a Blue Note session
@@ -222,6 +258,14 @@ is off, so a weight that does not exist is never faked.
   each refusal in "What Redline refuses to do".
 - **Body** (400, 1.125rem → 1.25rem, lh 1.625): Redline's prose. Measured at
   62–68ch maximum; never wider.
+- **Headline Close** (Anton 400, 2.2 / 3.4 / 5rem): One step above Headline,
+  reserved for a surface's closing statement, where the page has earned more
+  voice than its section heads carry.
+- **Row Title** (600, 1.0625rem, lh 1.375): The one-line statement of a finding,
+  in the landing page's stack and the app shell's alike. It sits deliberately
+  between Body and Body Small: a finding title has to outrank the prose beneath
+  it without becoming a heading, because the stamped code and the severity bar
+  above it are already carrying the hierarchy.
 - **Body Small** (400, 0.9375rem, lh 1.625): Finding explanations, counter-offer
   text, footnotes. Capped at 62ch.
 - **Label** (700, 0.72rem, tracking 0.14em, uppercase): Micro-labels — finding
