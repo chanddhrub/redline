@@ -20,6 +20,59 @@ async function offer(): Promise<ParsedDocument> {
   return result.document;
 }
 
+// ---------------------------------------------------------------------------
+// The two binary fixtures. Both are committed bytes, produced by
+// `scripts/make-intake-fixtures.mjs`, which says what is in them and why.
+//
+// `offer.pdf` is a two-page text-layer PDF. Its fourth sentence starts on page
+// one and finishes on page two, and the word it breaks on — "infor-mation" —
+// is broken at the page boundary itself. That is the case a PDF quote has to
+// survive: a clause cut in half by the layout can never be cited whole.
+//
+// `offer.docx` is a real zip of real WordprocessingML, so the format sniff,
+// the unzip and the XML read are all exercised rather than described.
+// ---------------------------------------------------------------------------
+
+const PDF_TEXT = [
+  "Northwind Analytics, Inc. Offer of Employment.",
+  "This letter confirms our offer for the position of Senior Data Engineer.",
+  "Your annual base salary will be $185,000, paid in accordance with the Company's standard payroll practices.",
+  "For a period of twelve (12) months after your last day you will not solicit any employee of the Company, and you agree that this restriction is reasonable in scope and duration given the confidential infor-\nmation you will receive in the course of your employment.",
+  "Any dispute arising out of this letter, including any dispute about Section 3.2, shall be resolved by final and binding arbitration.",
+  "Please sign and return this letter before your start date.",
+].join("\n");
+
+/** The sentence that runs from the foot of page one to the head of page two,
+ *  exactly as the stored text holds it. */
+const PDF_ACROSS_THE_PAGE_BREAK =
+  "For a period of twelve (12) months after your last day you will not solicit " +
+  "any employee of the Company, and you agree that this restriction is reasonable " +
+  "in scope and duration given the confidential infor-\nmation you will receive in " +
+  "the course of your employment.";
+
+const DOCX_TEXT = [
+  "Northwind Analytics, Inc. Offer of Employment.",
+  "This letter confirms our offer for the position of Staff Product Designer. Your annual base salary will be $172,500, paid in accordance with the Company's standard payroll practices.",
+  "You assign to the Company all right, title and interest in any invention (e.g., source code, designs or written material) that you conceive during your employment, whether or not it was made on Company equipment.",
+  "Any dispute arising out of this letter, including any dispute about Section 3.2, shall be resolved exclusively by final and binding arbitration.",
+  "Please review Policy No. 14 and return a signed copy before your start date.",
+  // mammoth ends every paragraph, the last one included, with a blank line.
+  // It is kept: the stored text is whatever the extractor produced.
+  "",
+].join("\n\n");
+
+async function pdfOffer(): Promise<ParsedDocument> {
+  const result = await parseFixture("offer.pdf");
+  if (!result.ok) throw new Error(`fixture refused: ${result.refusal.kind}`);
+  return result.document;
+}
+
+async function docxOffer(): Promise<ParsedDocument> {
+  const result = await parseFixture("offer.docx");
+  if (!result.ok) throw new Error(`fixture refused: ${result.refusal.kind}`);
+  return result.document;
+}
+
 describe("parseDocument — what comes back", () => {
   it("accepts plain text and keeps it verbatim", async () => {
     const result = await parseFixture("offer.txt");
@@ -60,11 +113,26 @@ describe("parseDocument — what comes back", () => {
     expect(result).toEqual({ ok: false, refusal: { kind: "empty" } });
   });
 
-  it("refuses a PDF by content, not by extension", async () => {
-    const result = await parseDocument(bytes("scan.pdf"), "definitely-a-contract.txt");
+  // The extension is a claim the file makes about itself. A PDF renamed
+  // `.txt` is still read as a PDF, and the name is only ever used in the
+  // message shown to the reader.
+  it("reads a PDF by content, whatever the filename claims", async () => {
+    const result = await parseDocument(bytes("offer.pdf"), "definitely-plain-text.txt");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.text).toBe(PDF_TEXT);
+  });
+
+  it("reads a Word file by content, whatever the filename claims", async () => {
+    const result = await parseDocument(bytes("offer.docx"), "contract.pdf");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.text).toBe(DOCX_TEXT);
+  });
+
+  it("refuses a PDF it cannot read rather than returning half of one", async () => {
+    const result = await parseFixture("scan.pdf");
     expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.refusal).toEqual({ kind: "unsupported-format", detected: "pdf" });
   });
 
   it("refuses a legacy .doc", async () => {
@@ -565,5 +633,158 @@ describe("locate — every sentence of the typography fixture still round-trips"
       expect(span, `should locate: ${sentence.text.slice(0, 40)}`).not.toBeNull();
       expect(doc.text.slice(span!.start, span!.end)).toBe(sentence.text);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PDF (ticket 03). Everything here runs under the Node test runner with no
+// DOM, which is the point: the seam is exercised where the UI is not.
+// ---------------------------------------------------------------------------
+
+describe("a text-layer PDF", () => {
+  it("comes through as the text the document actually says", async () => {
+    const doc = await pdfOffer();
+    expect(doc.text).toBe(PDF_TEXT);
+  });
+
+  it("keeps every sentence offset true to the text it indexes", async () => {
+    const doc = await pdfOffer();
+    expect(doc.sentences.length).toBe(6);
+    for (const sentence of doc.sentences) {
+      expect(doc.text.slice(sentence.start, sentence.end)).toBe(sentence.text);
+    }
+  });
+
+  it("treats a sentence spanning a page break as one sentence", async () => {
+    const doc = await pdfOffer();
+    const spanning = doc.sentences.filter((s) => s.text.includes("twelve (12) months"));
+    expect(spanning).toHaveLength(1);
+    expect(spanning[0].text).toBe(PDF_ACROSS_THE_PAGE_BREAK);
+    // Both halves really are on opposite sides of the break: the clause opens
+    // on page one and its last words are on page two.
+    expect(spanning[0].text).toContain("given the confidential infor-");
+    expect(spanning[0].text).toContain("mation you will receive");
+  });
+
+  it("locates the page-spanning sentence quoted back verbatim", async () => {
+    const doc = await pdfOffer();
+    const span = doc.locate(PDF_ACROSS_THE_PAGE_BREAK);
+    expect(span).not.toBeNull();
+    expect(doc.text.slice(span!.start, span!.end)).toBe(PDF_ACROSS_THE_PAGE_BREAK);
+  });
+
+  // The hyphen is the typesetter's, not the author's. A reader quoting the
+  // clause writes "information", and losing the span over that would cost
+  // them the flag.
+  it("locates it with the word the page boundary broke put back together", async () => {
+    const doc = await pdfOffer();
+    const rejoined = PDF_ACROSS_THE_PAGE_BREAK.replace("infor-\nmation", "information");
+    expect(rejoined).not.toBe(PDF_ACROSS_THE_PAGE_BREAK);
+
+    const span = doc.locate(rejoined);
+    expect(span).not.toBeNull();
+    expect(doc.text.slice(span!.start, span!.end)).toBe(PDF_ACROSS_THE_PAGE_BREAK);
+  });
+
+  it("locates a fragment that starts on one page and ends on the next", async () => {
+    const doc = await pdfOffer();
+    const fragment = "given the confidential information you will receive";
+    const span = doc.locate(fragment);
+    expect(span).not.toBeNull();
+    expect(doc.text.slice(span!.start, span!.end)).toBe(
+      "given the confidential infor-\nmation you will receive",
+    );
+  });
+
+  it("locates every one of its sentences and slices back to each", async () => {
+    const doc = await pdfOffer();
+    for (const sentence of doc.sentences) {
+      const span = doc.locate(sentence.text);
+      expect(span, `should locate: ${sentence.text.slice(0, 40)}`).not.toBeNull();
+      expect(doc.text.slice(span!.start, span!.end)).toBe(sentence.text);
+    }
+  });
+
+  it("still returns null for a page-spanning sentence with one number changed", async () => {
+    const doc = await pdfOffer();
+    const altered = PDF_ACROSS_THE_PAGE_BREAK
+      .replace("twelve (12)", "twenty-four (24)")
+      .replace("infor-\nmation", "information");
+    expect(doc.locate(altered)).toBeNull();
+  });
+
+  it("still returns null for a paraphrase of the page-spanning sentence", async () => {
+    const doc = await pdfOffer();
+    expect(
+      doc.locate(
+        "You may not solicit any Company employee for a year after you leave, because of the confidential information you saw.",
+      ),
+    ).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DOCX (ticket 04).
+// ---------------------------------------------------------------------------
+
+describe("a Word document", () => {
+  it("comes through as the text the document actually says", async () => {
+    const doc = await docxOffer();
+    expect(doc.text).toBe(DOCX_TEXT);
+  });
+
+  it("keeps every sentence offset true to the text it indexes", async () => {
+    const doc = await docxOffer();
+    expect(doc.sentences.length).toBe(6);
+    for (const sentence of doc.sentences) {
+      expect(doc.text.slice(sentence.start, sentence.end)).toBe(sentence.text);
+    }
+  });
+
+  it("does not split a clause on e.g., No. or a section number", async () => {
+    const doc = await docxOffer();
+
+    const withEg = doc.sentences.find((s) => s.text.includes("(e.g., source code"));
+    expect(withEg?.text).toContain("made on Company equipment.");
+
+    const withSection = doc.sentences.find((s) => s.text.includes("Section 3.2"));
+    expect(withSection?.text).toContain("binding arbitration.");
+
+    const withNo = doc.sentences.find((s) => s.text.includes("Policy No. 14"));
+    expect(withNo?.text).toContain("before your start date.");
+  });
+
+  it("locates every one of its sentences and slices back to each", async () => {
+    const doc = await docxOffer();
+    for (const sentence of doc.sentences) {
+      const span = doc.locate(sentence.text);
+      expect(span, `should locate: ${sentence.text.slice(0, 40)}`).not.toBeNull();
+      expect(doc.text.slice(span!.start, span!.end)).toBe(sentence.text);
+    }
+  });
+
+  it("locates a clause quoted with a curly apostrophe and collapsed whitespace", async () => {
+    const doc = await docxOffer();
+    const canonical =
+      "Your annual base salary will be $172,500, paid in accordance with the Company's standard payroll practices.";
+    expect(doc.text).toContain(canonical);
+
+    const span = doc.locate(`  ${canonical.replace("Company's", `Company${APO}s`)}\n`);
+    expect(span).not.toBeNull();
+    expect(doc.text.slice(span!.start, span!.end)).toBe(canonical);
+  });
+
+  it("returns null for a clause that belongs to the PDF fixture", async () => {
+    const doc = await docxOffer();
+    expect(doc.locate("Please sign and return this letter before your start date.")).toBeNull();
+  });
+
+  it("returns null for one of its own clauses with a qualifier dropped", async () => {
+    const doc = await docxOffer();
+    expect(
+      doc.locate(
+        "Any dispute arising out of this letter, including any dispute about Section 3.2, shall be resolved by final and binding arbitration.",
+      ),
+    ).toBeNull();
   });
 });

@@ -1,0 +1,71 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 7 0 R >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 522 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(Northwind Analytics, Inc. Offer of Employment.) Tj
+T*
+(This letter confirms our offer for the position of Senior Data Engineer.) Tj
+T*
+(Your annual base salary will be $185,000, paid in accordance with the) Tj
+T*
+(Company's standard payroll practices.) Tj
+T*
+(For a period of twelve \(12\) months after your last day you will not solicit) Tj
+T*
+(any employee of the Company, and you agree that this restriction is) Tj
+T*
+(reasonable in scope and duration given the confidential infor-) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Length 311 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(mation you will receive in the course of your employment.) Tj
+T*
+(Any dispute arising out of this letter, including any dispute about) Tj
+T*
+(Section 3.2, shall be resolved by final and binding arbitration.) Tj
+T*
+(Please sign and return this letter before your start date.) Tj
+ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000247 00000 n 
+0000000373 00000 n 
+0000000470 00000 n 
+0000001042 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1403
+%%EOF
