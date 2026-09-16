@@ -58,6 +58,13 @@ body {
 .on-ink:focus-visible {
   outline-color: var(--spot);
 }
+/* An outline is drawn on whatever ground surrounds the element it belongs to.
+   Inside the sheet that ground is paper cream, where spot measures 2.81:1, so
+   anything focused within the document takes ink back. The sheet itself is
+   excluded: it sits on the ink plate, where ink would be the invisible one. */
+.sheet :focus-visible {
+  outline-color: var(--ink);
+}
 a {
   text-underline-offset: 0.22em;
   text-decoration-thickness: 1.5px;
@@ -258,6 +265,14 @@ a {
 }
 .mark:hover {
   color: var(--paper);
+}
+/* This file is unlayered, so it outranks Tailwind's utility layer; a disabled
+   mark has to be dimmed here or it stays at full strength and still lights up
+   on hover. WCAG exempts an inactive control from the contrast minimum. */
+.mark:disabled,
+.mark:disabled:hover {
+  color: color-mix(in srgb, var(--paper) 42%, transparent);
+  cursor: not-allowed;
 }
 /* The rail's ground IS spot, so its marks are ink. */
 .mark-ink {

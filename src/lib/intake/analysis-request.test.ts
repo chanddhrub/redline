@@ -71,6 +71,127 @@ describe("red lines", () => {
     s = addRedLine(s, "One");
     expect(s.redLines[0].id).not.toBe(s.redLines[1].id);
   });
+
+  it("holds several at once, in the order they were written", () => {
+    let s = emptyRequest();
+    for (const text of [
+      "I will not sign an IP assignment covering personal projects",
+      "I will not sign a non-compete longer than six months",
+      "I will not sign away my right to a jury",
+      "I will not repay a signing bonus if I am laid off",
+    ]) {
+      s = addRedLine(s, text);
+    }
+    expect(s.redLines).toHaveLength(4);
+    expect(s.redLines.map((r) => r.text)).toEqual([
+      "I will not sign an IP assignment covering personal projects",
+      "I will not sign a non-compete longer than six months",
+      "I will not sign away my right to a jury",
+      "I will not repay a signing bonus if I am laid off",
+    ]);
+    expect(new Set(s.redLines.map((r) => r.id)).size).toBe(4);
+  });
+
+  it("leaves every other line's id alone when one is edited", () => {
+    let s = addRedLine(emptyRequest(), "First");
+    s = addRedLine(s, "Second");
+    s = addRedLine(s, "Third");
+    const ids = s.redLines.map((r) => r.id);
+
+    s = editRedLine(s, ids[1], "Second, sharpened");
+    expect(s.redLines.map((r) => r.id)).toEqual(ids);
+    expect(s.redLines.map((r) => r.text)).toEqual([
+      "First",
+      "Second, sharpened",
+      "Third",
+    ]);
+  });
+
+  it("removes only the line asked for, and keeps the rest as they were", () => {
+    let s = addRedLine(emptyRequest(), "First");
+    s = addRedLine(s, "Second");
+    s = addRedLine(s, "Third");
+    const ids = s.redLines.map((r) => r.id);
+
+    s = removeRedLine(s, ids[0]);
+    expect(s.redLines.map((r) => r.text)).toEqual(["Second", "Third"]);
+    expect(s.redLines.map((r) => r.id)).toEqual([ids[1], ids[2]]);
+
+    const unchanged = removeRedLine(s, "rl-nobody");
+    expect(unchanged.redLines.map((r) => r.id)).toEqual([ids[1], ids[2]]);
+  });
+
+  it("returns new state and leaves the state it was given alone", () => {
+    const one = addRedLine(emptyRequest(), "First");
+    const two = addRedLine(one, "Second");
+    const edited = editRedLine(two, two.redLines[0].id, "First, sharpened");
+    const removed = removeRedLine(edited, edited.redLines[1].id);
+
+    expect(one.redLines.map((r) => r.text)).toEqual(["First"]);
+    expect(two.redLines.map((r) => r.text)).toEqual(["First", "Second"]);
+    expect(edited.redLines.map((r) => r.text)).toEqual([
+      "First, sharpened",
+      "Second",
+    ]);
+    expect(removed.redLines.map((r) => r.text)).toEqual(["First, sharpened"]);
+  });
+
+  it("stores an edit exactly as typed too", () => {
+    const s = addRedLine(emptyRequest(), "Plain");
+    const after = editRedLine(
+      s,
+      s.redLines[0].id,
+      "  I will NOT sign this — final answer\t",
+    );
+    expect(after.redLines[0].text).toBe(
+      "  I will NOT sign this — final answer\t",
+    );
+  });
+
+  it("refuses a blank add without disturbing the lines already held", () => {
+    let s = addRedLine(emptyRequest(), "Keep me");
+    const ids = s.redLines.map((r) => r.id);
+    for (const blank of ["", " ", "\t", "\n", "\u00a0", "  \r\n \t "]) {
+      s = addRedLine(s, blank);
+    }
+    expect(s.redLines.map((r) => r.text)).toEqual(["Keep me"]);
+    expect(s.redLines.map((r) => r.id)).toEqual(ids);
+  });
+
+  it("carries no severity of its own — promotion is the analysis feature's", () => {
+    let s = addRedLine(emptyRequest(), "I will not sign a non-compete");
+    s = editRedLine(s, s.redLines[0].id, "I will not sign any non-compete");
+    for (const line of s.redLines) {
+      expect(Object.keys(line).sort()).toEqual(["id", "text"]);
+    }
+  });
+
+  it("does not stand between a reader with none and the analysis", () => {
+    const none = setJurisdiction(setDocument(emptyRequest(), doc), "Texas");
+    expect(none.redLines).toEqual([]);
+    expect(isReady(none)).toBe(true);
+    expect(whatIsMissing(none)).toEqual([]);
+    expect(toAnalysisRequest(none)!.redLines).toEqual([]);
+
+    let some = addRedLine(none, "I will not sign a non-compete");
+    expect(isReady(some)).toBe(true);
+
+    some = removeRedLine(some, some.redLines[0].id);
+    expect(isReady(some)).toBe(true);
+    expect(whatIsMissing(some)).toEqual([]);
+  });
+
+  it("survives a jurisdiction change with its ids and its wording intact", () => {
+    let s = addRedLine(emptyRequest(), "  I will not sign an arbitration clause  ");
+    s = addRedLine(s, "I will not sign a two-year non-solicit");
+    const before = s.redLines.map((r) => ({ ...r }));
+
+    s = setJurisdiction(s, "California");
+    s = setJurisdiction(s, "New York");
+    s = setJurisdiction(s, "Ontario" as never);
+
+    expect(s.redLines).toEqual(before);
+  });
 });
 
 describe("the state you work in", () => {

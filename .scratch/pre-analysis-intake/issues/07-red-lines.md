@@ -1,6 +1,6 @@
 # 07: Red lines
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** A job seeker declares, in their own words, what they will not sign — "I will not sign an IP assignment covering personal projects". They can add several, sharpen one once they have seen the document, and delete one they have changed their mind about. Blank and whitespace-only entries are rejected so the list stays meaningful; anything else is stored exactly as typed.
 
@@ -10,11 +10,11 @@ Intake carries red lines faithfully and does nothing else with them. No parsing,
 
 **Blocked by:** 01.
 
-- [ ] A red line can be written in free text and added to the list
-- [ ] Several red lines can be held at once
-- [ ] A red line can be edited and deleted
-- [ ] Blank and whitespace-only entries are rejected; other text is stored as typed
-- [ ] The page states in plain words that a red line promotes and names the line crossed, and hides nothing
-- [ ] Red lines are optional: a user with none can still run the analysis
-- [ ] Add, edit and remove are pure operations on the analysis-request state, each returning new state
-- [ ] No red-line matching, parsing or taxonomy exists in intake
+- [x] A red line can be written in free text and added to the list
+- [x] Several red lines can be held at once
+- [x] A red line can be edited and deleted
+- [x] Blank and whitespace-only entries are rejected; other text is stored as typed
+- [x] The page states in plain words that a red line promotes and names the line crossed, and hides nothing
+- [x] Red lines are optional: a user with none can still run the analysis
+- [x] Add, edit and remove are pure operations on the analysis-request state, each returning new state
+- [x] No red-line matching, parsing or taxonomy exists in intake

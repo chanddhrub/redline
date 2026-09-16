@@ -10,6 +10,13 @@
 
 import type { ParsedDocument, Sentence } from "./parse-document";
 
+/** A constraint the reader declares in their own words. Two fields, and it
+ *  stays at two: intake carries red lines and does nothing else with them.
+ *
+ *  No severity field. Promotion — raising a matching flag to the top and naming
+ *  the line it crossed — is the analysis feature's job (ADR 0003), and a
+ *  severity here would pre-empt it. Nothing in intake reads this text for
+ *  meaning either; parsing, taxonomy and matching all live downstream. */
 export interface RedLine {
   id: string;
   text: string;
@@ -83,8 +90,13 @@ function nextId(): string {
   return `rl-${counter}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Blank and whitespace-only entries are rejected so the list stays
- *  meaningful; anything else is stored exactly as typed. */
+/** Blank and whitespace-only entries are rejected so the list stays meaningful.
+ *  Anything else is stored exactly as typed: no trimming, no title-casing, no
+ *  normalising. The reader's wording is the thing the analysis has to quote
+ *  back when it says which line was crossed, so it survives intact.
+ *
+ *  `trim` here is an emptiness test and nothing more. It is the only place
+ *  intake touches the characters of a red line at all. */
 export function addRedLine(
   state: AnalysisRequestState,
   text: string,
@@ -93,6 +105,10 @@ export function addRedLine(
   return { ...state, redLines: [...state.redLines, { id: nextId(), text }] };
 }
 
+/** Sharpening a line once the document has been read. The id is kept, so a
+ *  line that has been edited is still the same line; every other entry comes
+ *  through untouched, id included. An edit into blankness is refused the same
+ *  way an add is, and leaves the line as it was rather than emptying it. */
 export function editRedLine(
   state: AnalysisRequestState,
   id: string,
@@ -105,6 +121,8 @@ export function editRedLine(
   };
 }
 
+/** Changing your mind. An id that is not in the list leaves the list as it
+ *  was. */
 export function removeRedLine(
   state: AnalysisRequestState,
   id: string,

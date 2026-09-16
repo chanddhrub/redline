@@ -191,7 +191,11 @@ export function Shell() {
     <div className="min-h-screen bg-ink text-paper lg:flex">
       <Rail ready={ready} sample={sample} jurisdiction={request.jurisdiction} />
 
-      <main className="min-w-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      {/* Everything past the rail is an ink plate, and a 3px ink outline on
+          an ink ground is an outline nobody can see. `.on-ink` switches the
+          focus outline to spot for the whole pane; globals.css hands ink back
+          inside the cream sheet, where spot would be the invisible one. */}
+      <main className="on-ink min-w-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         {/* ── The document. The fixed thing on the screen. ───────────── */}
         <section
           id="document"
@@ -244,7 +248,7 @@ export function Shell() {
                   value={pasted}
                   onChange={(e) => setPasted(e.target.value)}
                   rows={12}
-                  className="document w-full resize-y bg-paper px-4 py-3 text-[0.9375rem] text-ink outline-none"
+                  className="document w-full resize-y bg-paper px-4 py-3 text-[0.9375rem] text-ink"
                   placeholder="Paste here…"
                 />
                 <div className="flex flex-wrap gap-3 border-t-2 border-spot p-3">
@@ -633,7 +637,7 @@ function Jurisdiction({
   onChange: (v: UsState) => void;
 }) {
   return (
-    <div className="on-ink">
+    <div>
       <SectionHead
         id="jurisdiction"
         title="Where you work"
@@ -947,10 +951,17 @@ function RedLines({
         note="What you will not sign, in your own words"
       />
       <div className="px-4 py-4 sm:px-6">
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-          A red line moves a matching flag to the top of the list and names the
-          line it crossed. It never hides anything, and it never moves a flag
-          down.
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+          A red line is something you have already decided you will not sign.
+          Write it the way you would say it out loud.
+        </p>
+        {/* Ticket criterion, not a nicety: a reader who expects a red line to
+            filter the output has been misled by us. */}
+        <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+          When a flag matches one of your red lines, Redline moves that flag to
+          the top and names the line it crossed. You still see every flag
+          either way. A red line never hides one, and never ranks one lower
+          than it would have been on its own.
         </p>
 
         <form
@@ -968,6 +979,7 @@ function RedLines({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="I will not sign an IP assignment covering personal projects"
+            aria-describedby="rl-blank"
             className="min-w-0 flex-1 border-2 border-spot bg-paper px-3 py-2 font-voice text-[0.9375rem] text-ink placeholder:text-ink/45"
           />
           <button
@@ -977,11 +989,15 @@ function RedLines({
           >
             <span>Add</span>
           </button>
+          <p id="rl-blank" className="label w-full text-paper/60">
+            Blank and space-only lines are not kept, because there would be
+            nothing for a flag to match.
+          </p>
         </form>
 
         {lines.length === 0 ? (
           <p className="label mt-4 text-paper/60">
-            None set. The analysis runs without them.
+            None set. The analysis runs the same way without them.
           </p>
         ) : (
           <ul className="mt-4 border-t-2 border-spot">
@@ -998,10 +1014,17 @@ function RedLines({
                     <input
                       value={editing.text}
                       onChange={(e) => setEditing({ id: line.id, text: e.target.value })}
+                      aria-label={`Edit red line: ${line.text}`}
                       className="min-w-0 flex-1 border-2 border-spot bg-paper px-2 py-1 font-voice text-[0.9375rem] text-ink"
                       autoFocus
                     />
-                    <button type="submit" className="mark">
+                    {/* Blank is rejected by the seam either way. Saying so on
+                        the control beats letting the typing silently revert. */}
+                    <button
+                      type="submit"
+                      disabled={!editing.text.trim()}
+                      className="mark"
+                    >
                       Save
                     </button>
                     <button type="button" onClick={() => setEditing(null)} className="mark">
@@ -1016,11 +1039,17 @@ function RedLines({
                     <button
                       type="button"
                       onClick={() => setEditing({ id: line.id, text: line.text })}
+                      aria-label={`Edit red line: ${line.text}`}
                       className="mark"
                     >
                       Edit
                     </button>
-                    <button type="button" onClick={() => onRemove(line.id)} className="mark">
+                    <button
+                      type="button"
+                      onClick={() => onRemove(line.id)}
+                      aria-label={`Delete red line: ${line.text}`}
+                      className="mark"
+                    >
                       Delete
                     </button>
                   </div>
