@@ -1,6 +1,6 @@
 # 02: A model's quote still finds its sentence
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** A source sentence stays findable when it comes back in a slightly different shape than the document wrote it. A job seeker whose PDF uses curly quotes, ligatures, or a hyphen broken across a line should not silently lose a flag to typography — and should never be shown a quote that is not actually theirs.
 
@@ -10,9 +10,9 @@ The negative half matters more than the positive half. A near-miss returns `null
 
 **Blocked by:** 01.
 
-- [ ] Normalisation covers whitespace collapsing, smart quotes and apostrophes, ligatures, soft hyphens, and hyphenation broken across a line or page
-- [ ] Normalisation never changes a word
-- [ ] Spans returned by `locate` are offsets into the canonical text, and slice back to the original sentence exactly
-- [ ] Positive corpus, built from real fixture sentences: curly quotes where the document has straight ones and the reverse, a ligature spelled out, a hyphen broken across a line, collapsed or doubled whitespace, leading or trailing space — each returns a span slicing back to the original
-- [ ] Negative corpus: a sentence with one word changed, a plausible sentence from a different fixture, a paraphrase, a subtly reworded clause — each returns `null`
-- [ ] No fuzzy or best-effort matching exists anywhere in `locate`
+- [x] Normalisation covers whitespace collapsing, smart quotes and apostrophes, ligatures, soft hyphens, and hyphenation broken across a line or page
+- [x] Normalisation never changes a word
+- [x] Spans returned by `locate` are offsets into the canonical text, and slice back to the original sentence exactly
+- [x] Positive corpus, built from real fixture sentences: curly quotes where the document has straight ones and the reverse, a ligature spelled out, a hyphen broken across a line, collapsed or doubled whitespace, leading or trailing space — each returns a span slicing back to the original
+- [x] Negative corpus: a sentence with one word changed, a plausible sentence from a different fixture, a paraphrase, a subtly reworded clause — each returns `null`
+- [x] No fuzzy or best-effort matching exists anywhere in `locate`

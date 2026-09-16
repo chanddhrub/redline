@@ -10,9 +10,10 @@
  * way in, because that is what makes "the quote string-matches the stored
  * text exactly" checkable at all (ADR 0001).
  *
- * `locate` is exact-match only here. Reversible normalisation — curly quotes,
- * ligatures, broken hyphens — is ticket 02 and lands inside `locate` without
- * changing this contract.
+ * `locate` tolerates typography and nothing else. It normalises a view of the
+ * canonical text and the incoming quote the same way, matches exactly in that
+ * view, and maps the match back — so the offsets it returns always index the
+ * canonical text (ticket 02).
  */
 
 export interface Sentence {
@@ -157,18 +158,174 @@ async function segment(
   return out;
 }
 
+/* ---------------------------------------------------------------------------
+ * Reversible normalisation, used only by `locate`.
+ *
+ * The canonical text is never touched. A normalised *view* of it is built
+ * alongside, with, for every normalised character, the canonical range that
+ * produced it. A quote is normalised the same way, matched exactly in
+ * normalised space, and the match is mapped back — so `locate` hands out
+ * offsets into the canonical text and the sentence the reader checked is the
+ * sentence the analysis quotes (ADR 0001).
+ *
+ * What is normalised is typography only: whitespace runs, smart quotes and
+ * apostrophes, typographic ligatures, soft hyphens, and a hyphen broken across
+ * a line or a page. Nothing here changes a letter, a case or a word order.
+ * Matching is `indexOf` and nothing else: there is no edit distance, no
+ * token overlap, no nearest-sentence fallback. A quote that does not match is
+ * a dropped flag, which is the intended cost; a quote matched loosely would be
+ * a wrong flag, which is the failure this product exists to rule out.
+ * ------------------------------------------------------------------------ */
+
+/** Curly quotes and apostrophes, folded to their straight equivalents. Both
+ *  directions are covered by folding the document and the quote alike. */
+const QUOTE_FOLD: Record<string, string> = {
+  "\u201c": '"',
+  "\u201d": '"',
+  "\u201e": '"',
+  "\u201f": '"',
+  "\u2033": '"',
+  "\u2018": "'",
+  "\u2019": "'",
+  "\u201a": "'",
+  "\u201b": "'",
+  "\u2032": "'",
+};
+
+/** Typographic ligatures, spelled out. These are glyph choices made by the
+ *  typesetter, not spellings: a word set with one is the same word. */
+const LIGATURE_FOLD: Record<string, string> = {
+  "\ufb00": "ff",
+  "\ufb01": "fi",
+  "\ufb02": "fl",
+  "\ufb03": "ffi",
+  "\ufb04": "ffl",
+  "\ufb05": "st",
+  "\ufb06": "st",
+};
+
+/** Hyphens that a PDF may leave at the end of a line. */
+const HYPHENS = new Set(["-", "\u2010"]);
+
+/** An invisible hint about where a word may break. It is not part of the
+ *  word, and a model quoting the word never returns it. */
+const SOFT_HYPHEN = "\u00ad";
+
+function isSpace(ch: string): boolean {
+  return /\s/.test(ch);
+}
+
+function hasLineBreak(run: string): boolean {
+  return /[\n\r\f\v\u2028\u2029]/.test(run);
+}
+
+interface View {
+  /** The normalised text. */
+  normalised: string;
+  /** For normalised position i, the canonical offset its source starts at. */
+  from: number[];
+  /** For normalised position i, the canonical offset its source ends at. */
+  to: number[];
+  /** What a hyphen at a line break becomes in this view. */
+  brokenHyphen: "" | "-";
+}
+
+/**
+ * A hyphen at a line break is ambiguous: "discre-\ntion" is one word split by
+ * the typesetter, "non-\ncompete" is a compound whose hyphen belongs to the
+ * word. There is no way to tell them apart without a dictionary, so both
+ * readings are built as separate views and each is searched exactly. This is
+ * two exact matches, not a fuzzy one — nothing partial is ever accepted.
+ */
+function buildView(text: string, brokenHyphen: "" | "-"): View {
+  let normalised = "";
+  const from: number[] = [];
+  const to: number[] = [];
+
+  const emit = (chars: string, srcStart: number, srcEnd: number) => {
+    for (const ch of chars) {
+      normalised += ch;
+      from.push(srcStart);
+      to.push(srcEnd);
+    }
+  };
+
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+
+    if (ch === SOFT_HYPHEN) {
+      i += 1;
+      continue;
+    }
+
+    if (HYPHENS.has(ch)) {
+      let j = i + 1;
+      while (j < text.length && isSpace(text[j])) j += 1;
+      if (j > i + 1 && hasLineBreak(text.slice(i + 1, j))) {
+        if (brokenHyphen === "-") emit("-", i, i + 1);
+        i = j;
+        continue;
+      }
+      emit("-", i, i + 1);
+      i += 1;
+      continue;
+    }
+
+    if (isSpace(ch)) {
+      let j = i;
+      while (j < text.length && isSpace(text[j])) j += 1;
+      emit(" ", i, j);
+      i = j;
+      continue;
+    }
+
+    const ligature = LIGATURE_FOLD[ch];
+    if (ligature !== undefined) {
+      emit(ligature, i, i + 1);
+      i += 1;
+      continue;
+    }
+
+    const quoteMark = QUOTE_FOLD[ch];
+    emit(quoteMark ?? ch, i, i + 1);
+    i += 1;
+  }
+
+  return { normalised, from, to, brokenHyphen };
+}
+
+function findIn(view: View, quote: string): Span | null {
+  // Leading and trailing whitespace is the shape a model returns a sentence
+  // in; it is not part of the sentence.
+  const needle = buildView(quote, view.brokenHyphen).normalised.trim();
+  if (!needle) return null;
+  const at = view.normalised.indexOf(needle);
+  if (at === -1) return null;
+  return { start: view.from[at], end: view.to[at + needle.length - 1] };
+}
+
 async function makeDocument(
   text: string,
   onProgress?: ProgressListener,
 ): Promise<ParsedDocument> {
   const sentences = await segment(text, onProgress);
+
+  // Built on first use and kept: most documents are never located into, and a
+  // document that is gets one flag after another checked against it.
+  let views: View[] | null = null;
+
   return {
     text,
     sentences,
     locate(quote: string): Span | null {
       if (!quote) return null;
-      const start = text.indexOf(quote);
-      return start === -1 ? null : { start, end: start + quote.length };
+      views ??= [buildView(text, ""), buildView(text, "-")];
+      for (const view of views) {
+        const span = findIn(view, quote);
+        if (span) return span;
+      }
+      return null;
     },
   };
 }
