@@ -17,8 +17,9 @@ import { parseDocument } from "../../../lib/intake/parse-document";
 import { createStubModelClient, loadFixture } from "../../../lib/model/stub";
 import type { FixtureName } from "../../../lib/model/stub";
 import { analyse } from "../../../lib/analysis/analyse";
+import { enforceabilityNotes } from "../../../lib/analysis/enforceability";
 import { answer } from "../../../lib/analysis/answer";
-import type { RedLine } from "../../../lib/intake/analysis-request";
+import type { RedLine, UsState } from "../../../lib/intake/analysis-request";
 import {
   factorLabel,
   headline,
@@ -36,6 +37,7 @@ async function bodyFor(
   name: FixtureName,
   redLines: RedLine[] = [],
   claimRedLineId?: string,
+  jurisdiction: UsState = "California",
 ): Promise<unknown> {
   const fixture = loadFixture(name);
   const bytes = new TextEncoder().encode(fixture.text);
@@ -49,7 +51,7 @@ async function bodyFor(
     {
       text: parsed.document.text,
       sentences: parsed.document.sentences,
-      jurisdiction: "California",
+      jurisdiction,
       redLines,
     },
     createStubModelClient({
@@ -69,6 +71,10 @@ async function bodyFor(
           }
         : undefined,
     }),
+    // What the route hands in: the second layer, keyed to the state on the
+    // request. It has to make the JSON trip too, or the browser's view of it
+    // is a shape nobody produced.
+    { context: enforceabilityNotes(jurisdiction) },
   );
   if (!outcome.ok) throw new Error(`analysis failed: ${JSON.stringify(outcome.failure)}`);
 
@@ -81,6 +87,64 @@ function expectParsed(body: unknown): WireAnalysis {
   if (!analysis) throw new Error("the wire parser refused a body the route produced");
   return analysis;
 }
+
+describe("the second layer as it arrives over the wire", () => {
+  it("carries the topic, the source and the date, and no evidence at all", async () => {
+    const analysis = expectParsed(await bodyFor("adhesion-contract"));
+
+    expect(analysis.context.length).toBeGreaterThan(0);
+    for (const note of analysis.context) {
+      expect(note.register).toBe("general");
+      expect(note.basis.length).toBeGreaterThan(8);
+      expect(note.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(Object.keys(note).sort()).toEqual([
+        "asOf",
+        "basis",
+        "register",
+        "statement",
+        "topic",
+      ]);
+    }
+  });
+
+  it("refuses a body that tries to hand a general statement some evidence", async () => {
+    const body = (await bodyFor("adhesion-contract")) as {
+      context: Record<string, unknown>[];
+    };
+    body.context[0] = {
+      ...body.context[0],
+      citation: { text: "anything", span: { start: 0, end: 8 } },
+    };
+
+    // A note with a citation is the merge ADR 0005 forbids, arriving as data.
+    // It fails the whole parse rather than being quietly trimmed, because a
+    // body making that claim is not a body to render half of.
+    expect(parseAnalysis(body)).toBeNull();
+  });
+
+  it("refuses a note with no topic to place it against", async () => {
+    const body = (await bodyFor("adhesion-contract")) as {
+      context: Record<string, unknown>[];
+    };
+    const { topic: _topic, ...rest } = body.context[0];
+    body.context[0] = rest;
+
+    expect(parseAnalysis(body)).toBeNull();
+  });
+
+  it("gives a Texan a different second layer and the same ranked flags", async () => {
+    const californian = expectParsed(await bodyFor("adhesion-contract"));
+    const texan = expectParsed(
+      await bodyFor("adhesion-contract", [], undefined, "Texas"),
+    );
+
+    const ranking = (analysis: WireAnalysis) =>
+      analysis.flags.map((ranked) => [ranked.rank, ranked.flag.id, ranked.severity]);
+
+    expect(ranking(texan)).toEqual(ranking(californian));
+    expect(texan.context).not.toEqual(californian.context);
+  });
+});
 
 describe("the analysis as it arrives over the wire", () => {
   it("accepts the planted document's analysis and keeps every located sentence", async () => {

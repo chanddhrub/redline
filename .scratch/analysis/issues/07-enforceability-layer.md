@@ -1,6 +1,6 @@
 # 07: The labelled enforceability layer
 
-Status: ready-for-agent
+Status: done 2026-09-16
 
 **What to build:** The one place the product is allowed to say something the
 document does not. Enforceability context keyed to the state the user works in,
@@ -24,19 +24,19 @@ what makes that visible.
 
 **Blocked by:** 04, 05.
 
-- [ ] Enforceability notes are keyed to the user's state and carry no span
-- [ ] Every note is labelled as not coming from the reader's document, in words
+- [x] Enforceability notes are keyed to the user's state and carry no span
+- [x] Every note is labelled as not coming from the reader's document, in words
       as well as in styling
-- [ ] The layer is visually distinct per `DESIGN.md`: a 2px dashed ink border and
+- [x] The layer is visually distinct per `DESIGN.md`: a 2px dashed ink border and
       a halftone rail, header reading "Not from your document", copy in Archivo
       and never in Tinos
-- [ ] A note never alters a flag's severity or its position, asserted by running
+- [x] A note never alters a flag's severity or its position, asserted by running
       the pipeline with and without the layer
-- [ ] A Californian reading a non-compete flag is told their state's position,
+- [x] A Californian reading a non-compete flag is told their state's position,
       beside the flag, without the flag's severity moving
-- [ ] The governing-law clause is shown as a citation with its span where the
+- [x] The governing-law clause is shown as a citation with its span where the
       document has one, and its state is named alongside the user's
-- [ ] The starting set records its date and provenance in the repository
-- [ ] A reader can classify every item on screen as "from my document" or
+- [x] The starting set records its date and provenance in the repository
+- [x] A reader can classify every item on screen as "from my document" or
       "general context" (PRD §4 T7)
-- [ ] All copy has been through the humanizer skill
+- [x] All copy has been through the humanizer skill

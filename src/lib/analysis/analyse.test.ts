@@ -27,7 +27,7 @@ import { CLAUSE_TYPES, type ClauseType } from "../model/payloads";
 import type { AnalysisRequest, RedLine } from "../intake/analysis-request";
 import { analyse, type Analysis } from "./analyse";
 import { DEFAULT_SEVERITY } from "./rank";
-import type { GeneralStatement } from "./register";
+import type { EnforceabilityNote } from "./enforceability";
 
 /** The fixture, through the real parser, in the shape intake hands over. */
 async function requestFor(
@@ -52,7 +52,7 @@ async function requestFor(
 interface RunOptions {
   corruptions?: StubCorruption[];
   redLines?: RedLine[];
-  context?: GeneralStatement[];
+  context?: EnforceabilityNote[];
   transform?: (payload: unknown) => unknown;
 }
 
@@ -402,8 +402,9 @@ describe("the standing check", () => {
 });
 
 describe("the two registers", () => {
-  const note: GeneralStatement = {
+  const note: EnforceabilityNote = {
     register: "general",
+    topic: "non-compete",
     statement:
       "California does not enforce employee non-competes, whatever the contract says.",
     basis: "Cal. Bus. & Prof. Code section 16600",

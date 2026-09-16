@@ -15,9 +15,16 @@
  *
  * Server only: the model client reads `OPENROUTER_API_KEY`, and `openrouter.ts`
  * imports `server-only`, so this file cannot be pulled into a client bundle.
+ *
+ * The enforceability notes for the state in the body are looked up here and
+ * passed in. They are the one thing this product says that the document does
+ * not, they carry no span because nothing in the document supports them, and
+ * the pipeline takes them as an argument so that it cannot consult them while
+ * ranking.
  */
 
 import { analyse } from "@/lib/analysis/analyse";
+import { enforceabilityNotes } from "@/lib/analysis/enforceability";
 import { createOpenRouterClient } from "@/lib/model/openrouter";
 import { analysisBodySchema, readBody } from "../_lib/body";
 
@@ -25,7 +32,13 @@ export async function POST(request: Request): Promise<Response> {
   const body = await readBody(request, analysisBodySchema);
   if (!body.ok) return body.response;
 
-  const outcome = await analyse(body.value, createOpenRouterClient());
+  // The second layer is assembled here and handed in, rather than reached for
+  // inside the pipeline. Keeping it an argument is what makes "running with the
+  // layer and running without it produce the same flags" a thing a caller can
+  // actually do, and a thing the tests do on every run (ADR 0005).
+  const outcome = await analyse(body.value, createOpenRouterClient(), {
+    context: enforceabilityNotes(body.value.jurisdiction),
+  });
 
   if (!outcome.ok) {
     // The failure goes back as data, the way the model client hands it over.

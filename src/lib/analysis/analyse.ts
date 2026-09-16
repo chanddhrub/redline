@@ -26,7 +26,8 @@ import { ANALYSIS_OPERATION, analysisSchema } from "../model/payloads";
 import { ANALYSIS_SYSTEM_PROMPT, buildAnalysisUser } from "./prompt";
 import { buildCoverageReceipt, type CoverageReceipt } from "./coverage";
 import { rankFlags, type RankedFlag } from "./rank";
-import { documentStatement, type DocumentStatement, type GeneralStatement } from "./register";
+import { documentStatement, type DocumentStatement } from "./register";
+import type { EnforceabilityNote } from "./enforceability";
 import {
   verifyFlags,
   verifyQuote,
@@ -63,9 +64,11 @@ export interface Analysis {
    * The general register: what a court or an employer might do. Supplied by the
    * caller (the enforceability layer), never produced here, and never consulted
    * by the ranking — running with and without it gives the same flags in the
-   * same order with the same severities (ADR 0005).
+   * same order with the same severities (ADR 0005). It is carried through
+   * untouched and joined to a flag by topic at render time; nothing on this
+   * side of the wire reads it.
    */
-  readonly context: GeneralStatement[];
+  readonly context: EnforceabilityNote[];
   /** In the document, so it is a citation rather than a flag: a governing-law
    *  sentence has no clause type, no severity and no counter-offer. */
   readonly governingLaw: Citation | null;
@@ -83,7 +86,7 @@ export type AnalysisOutcome =
 
 export interface AnalyseOptions {
   /** The labelled second layer, if the caller has one for this reader. */
-  context?: GeneralStatement[];
+  context?: EnforceabilityNote[];
 }
 
 /**

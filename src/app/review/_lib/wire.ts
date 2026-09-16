@@ -24,6 +24,7 @@
  */
 
 import type { CoverageReceipt } from "@/lib/analysis/coverage";
+import type { EnforceabilityTopic } from "@/lib/analysis/enforceability";
 import type { ClauseType, Severity } from "@/lib/model/payloads";
 
 export interface WireSpan {
@@ -45,8 +46,21 @@ export interface WireDocumentStatement {
   readonly citation: WireCitation;
 }
 
+/**
+ * A note from the labelled second layer, as it arrives (ADR 0005).
+ *
+ * It has no citation and no span, and there is no field here to put one in.
+ * That is not an omission in the wire shape; it is the same absence the server
+ * type has, carried across unchanged, because the absence is the whole
+ * permission this layer runs on.
+ *
+ * `topic` is how the screen sits a note beside the flag it is about. The join
+ * happens at render time and runs one way: the note finds the flag, and the
+ * flag never learns the note is there.
+ */
 export interface WireGeneralStatement {
   readonly register: "general";
+  readonly topic: EnforceabilityTopic;
   readonly statement: string;
   readonly basis: string;
   readonly asOf: string;
@@ -131,11 +145,23 @@ function documentStatement(value: unknown): WireDocumentStatement | null {
   return { register: "document", statement: value.statement, citation: cited };
 }
 
+const TOPICS: ReadonlySet<string> = new Set([...CLAUSE_TYPES, "governing-law"]);
+
+/**
+ * A note is checked the way everything else here is checked, and one extra
+ * thing is checked about it: that it did not arrive carrying a citation or a
+ * span. A body that tried to hand the browser a general statement with
+ * evidence attached is a body making a claim this layer is not allowed to
+ * make, and it fails the whole parse rather than being quietly trimmed.
+ */
 function generalStatement(value: unknown): WireGeneralStatement | null {
   if (!isRecord(value) || value.register !== "general") return null;
   if (!str(value.statement) || !str(value.basis) || !str(value.asOf)) return null;
+  if (!str(value.topic) || !TOPICS.has(value.topic)) return null;
+  if ("citation" in value || "span" in value) return null;
   return {
     register: "general",
+    topic: value.topic as EnforceabilityTopic,
     statement: value.statement,
     basis: value.basis,
     asOf: value.asOf,

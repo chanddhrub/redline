@@ -1352,7 +1352,12 @@ function Analysis({
       </div>
 
       {run.kind === "done" ? (
-        <Result analysis={run.analysis} selected={selected} onSelect={onSelect} />
+        <Result
+          analysis={run.analysis}
+          selected={selected}
+          onSelect={onSelect}
+          jurisdiction={jurisdiction}
+        />
       ) : null}
     </>
   );

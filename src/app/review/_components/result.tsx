@@ -20,6 +20,12 @@
  */
 
 import type { CoverageReceipt } from "@/lib/analysis/coverage";
+import type { UsState } from "@/lib/intake/analysis-request";
+import {
+  governingLawStates,
+  notesForTopic,
+  type EnforceabilityTopic,
+} from "@/lib/analysis/enforceability";
 import {
   factorLabel,
   headline,
@@ -75,28 +81,53 @@ export function CitedPanel({
 }
 
 /**
- * The second layer (ADR 0005). Dashed 2px border and a halftone rail, both
- * reserved for this one job: marking a claim that has no sentence behind it.
- * It never merges into a flag and never touches a severity.
+ * The second layer (ADR 0005, DESIGN.md).
+ *
+ * Built exactly like `CitedPanel` and then marked, in three ways at once, as
+ * the one thing that is not: a 2px *dashed* ink border, which this system
+ * reserves for this and nothing else; a 9-unit halftone rail down the inside
+ * left edge, because a screen means not-yours; and a header that says so in
+ * words, which is what a screen reader, a photocopy and a first-time reader
+ * all get. The copy is Archivo — Redline's voice. Tinos never appears on this
+ * panel, because Tinos is the contract talking and the contract did not say
+ * any of this.
+ *
+ * There is no span here and no sentence to point at. What stands in for them
+ * is the source and the date, printed under every line, because that is all a
+ * reader has to weigh a claim they cannot check against their own copy.
  */
-function NotFromDocument({ statements }: { statements: readonly WireGeneralStatement[] }) {
+export function NotFromDocument({
+  statements,
+  worksIn,
+}: {
+  statements: readonly WireGeneralStatement[];
+  worksIn: string | null;
+}) {
   if (statements.length === 0) return null;
   return (
-    <div className="border-2 border-dashed border-spot">
-      <p className="label border-b-2 border-dashed border-spot px-3 py-1.5 text-spot">
-        Not from your document
+    <div className="border-2 border-dashed border-ink bg-paper">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-dashed border-ink px-3 py-1.5">
+        <p className="label text-ink">Not from your document</p>
+        {worksIn ? (
+          <p className="label text-burnt">General context · {worksIn}</p>
+        ) : null}
+      </div>
+
+      <p className="border-b border-dashed border-ink/50 px-3 py-2 font-voice text-[0.8125rem] leading-relaxed text-burnt">
+        None of this is in your contract, so there is no sentence to check it
+        against. It is background on the law where you work, and it is not
+        advice about your situation. The source and the date under each line
+        are what you have to weigh it by.
       </p>
+
       {statements.map((statement, index) => (
-        <div key={index} className="flex items-stretch border-t border-dashed border-spot/50 first:border-t-0">
-          <div
-            className="halftone-ink w-9 shrink-0 border-r-2 border-dashed border-spot"
-            aria-hidden="true"
-          />
+        <div key={index} className="flex items-stretch border-t border-dashed border-ink/50 first:border-t-0">
+          <div className="halftone w-9 shrink-0 border-r-2 border-dashed border-ink" aria-hidden="true" />
           <div className="min-w-0 px-3 py-2.5">
-            <p className="max-w-[62ch] font-voice text-sm leading-relaxed text-paper">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-ink">
               {statement.statement}
             </p>
-            <p className="label tabular mt-2 text-paper/65">
+            <p className="label tabular mt-2 text-burnt">
               {statement.basis} · checked {statement.asOf}
             </p>
           </div>
@@ -104,6 +135,23 @@ function NotFromDocument({ statements }: { statements: readonly WireGeneralState
       ))}
     </div>
   );
+}
+
+/** The notes that belong beside one flag, or beside the governing-law quote.
+ *  A topic with nothing recorded for this reader's state renders nothing —
+ *  not a line saying it varies, which is the hedge ADR 0004 rules out. */
+function TopicNotes({
+  analysis,
+  topic,
+  worksIn,
+}: {
+  analysis: WireAnalysis;
+  topic: EnforceabilityTopic;
+  worksIn: string | null;
+}) {
+  const notes = notesForTopic(analysis.context, topic);
+  if (notes.length === 0) return null;
+  return <NotFromDocument statements={notes} worksIn={worksIn} />;
 }
 
 /* ── The summary ─────────────────────────────────────────────────────── */
@@ -187,12 +235,19 @@ function FlagRow({
   clauseLabel,
   active,
   onSelect,
+  notes,
+  worksIn,
 }: {
   ranked: WireRankedFlag;
   code: string;
   clauseLabel: string;
   active: boolean;
   onSelect: () => void;
+  /** The second layer for this clause type, if the reader's state has one.
+   *  It arrives as a prop rather than being fetched here, and the row has
+   *  already been ranked and banded by the time it does. */
+  notes: readonly WireGeneralStatement[];
+  worksIn: string | null;
 }) {
   const { flag, severity, promotion } = ranked;
   const rest = remainder(flag.meaning);
@@ -284,6 +339,12 @@ function FlagRow({
               {flag.counterOffer}
             </p>
           </div>
+
+          {/* The second layer, beside the flag and never inside it. The
+              severity, the band and the position above were all settled
+              before this was looked up, and nothing here can move them
+              (ADR 0005). */}
+          <NotFromDocument statements={notes} worksIn={worksIn} />
         </div>
       ) : null}
     </li>
@@ -294,10 +355,12 @@ function Flags({
   analysis,
   selected,
   onSelect,
+  worksIn,
 }: {
   analysis: WireAnalysis;
   selected: Selection;
   onSelect: (selection: Selection) => void;
+  worksIn: string | null;
 }) {
   const codes = stampCodes(analysis.flags);
   const labels = clauseLabels(analysis.coverage);
@@ -322,6 +385,8 @@ function Flags({
             clauseLabel={labels[ranked.flag.clauseType] ?? ranked.flag.clauseType}
             active={selected?.kind === "flag" && selected.id === ranked.flag.id}
             onSelect={() => onSelect({ kind: "flag", id: ranked.flag.id })}
+            notes={notesForTopic(analysis.context, ranked.flag.clauseType)}
+            worksIn={worksIn}
           />
         ))}
       </ul>
@@ -667,12 +732,32 @@ export function Result({
   analysis,
   selected,
   onSelect,
+  jurisdiction,
 }: {
   analysis: WireAnalysis;
   selected: Selection;
   onSelect: (selection: Selection) => void;
+  /** The state the reader told us they work in. It is the key the second
+   *  layer was looked up by, and it is the state the governing-law clause is
+   *  named against. */
+  jurisdiction: UsState | null;
 }) {
   const clean = analysis.flags.length === 0;
+
+  // Notes whose topic did not land beside anything — a clause type the reader
+  // has no flag for, on a clean document or otherwise. They are collected at
+  // the foot rather than dropped, on one panel with the same dashed border, so
+  // nothing keyed to this reader's state goes missing and nothing appears
+  // twice.
+  const placed = new Set<EnforceabilityTopic>(
+    analysis.flags.map((ranked) => ranked.flag.clauseType),
+  );
+  if (analysis.governingLaw) placed.add("governing-law");
+  const unplaced = analysis.context.filter((note) => !placed.has(note.topic));
+
+  const law = analysis.governingLaw
+    ? governingLawStates(analysis.governingLaw.text, jurisdiction)
+    : null;
 
   return (
     <>
@@ -698,7 +783,12 @@ export function Result({
       <Summary analysis={analysis} selected={selected} onSelect={onSelect} />
 
       {clean ? null : (
-        <Flags analysis={analysis} selected={selected} onSelect={onSelect} />
+        <Flags
+          analysis={analysis}
+          selected={selected}
+          onSelect={onSelect}
+          worksIn={jurisdiction}
+        />
       )}
 
       {analysis.governingLaw ? (
@@ -709,9 +799,9 @@ export function Result({
             </h3>
           </div>
           <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
-            This is in your document, so it is quoted rather than explained. It
-            names the state whose law the contract says applies, which is often
-            not the state you work in.
+            This sentence is in your document, so it is quoted. It picks the
+            state whose law your contract says applies, and that is often not
+            the state you work in.
           </p>
           <button
             type="button"
@@ -721,12 +811,48 @@ export function Result({
           >
             <CitedPanel citation={analysis.governingLaw} header="From your document" />
           </button>
+
+          {/* Two states, named separately, both read off things the reader
+              can check: one out of the sentence above, one out of what they
+              told us. Nothing here says which of them wins — that is a
+              general-context question and it goes on the dashed panel. */}
+          {law ? (
+            <dl className="tabular mt-3 grid gap-x-8 border-t-2 border-spot sm:grid-cols-2">
+              <div className="min-w-0 border-b border-spot/40 py-2">
+                <dt className="label text-paper/65">The clause picks</dt>
+                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-paper">
+                  {law.named ?? "No state named in that sentence"}
+                </dd>
+              </div>
+              <div className="min-w-0 border-b border-spot/40 py-2">
+                <dt className="label text-paper/65">You work in</dt>
+                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-paper">
+                  {law.worksIn ?? "No state set"}
+                </dd>
+              </div>
+            </dl>
+          ) : null}
+
+          {law?.differ ? (
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+              Those are two different states. Your document does not settle
+              which one a court would apply, and nothing above answers that.
+            </p>
+          ) : null}
+
+          <div className="mt-3">
+            <TopicNotes
+              analysis={analysis}
+              topic="governing-law"
+              worksIn={jurisdiction}
+            />
+          </div>
         </section>
       ) : null}
 
-      {analysis.context.length > 0 ? (
+      {unplaced.length > 0 ? (
         <section aria-label="General context" className="px-4 py-5 sm:px-6">
-          <NotFromDocument statements={analysis.context} />
+          <NotFromDocument statements={unplaced} worksIn={jurisdiction} />
         </section>
       ) : null}
 
