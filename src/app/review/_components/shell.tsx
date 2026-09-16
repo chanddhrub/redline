@@ -25,7 +25,35 @@ import {
   type ParsedDocument,
   type Refusal,
 } from "@/lib/intake/parse-document";
-import { findings, paragraphs, SAMPLE_LETTER } from "@/app/_demo/sample";
+import { paragraphs, SAMPLE_LETTER } from "@/app/_demo/sample";
+import {
+  interpretFailure,
+  parseAnalysis,
+  stampCodes,
+  type RunFailure,
+  type WireAnalysis,
+  type WireSpan,
+} from "../_lib/wire";
+import { DocumentSheet } from "./sheet";
+import {
+  Failed,
+  Result,
+  Running,
+  type RunReason,
+  type Selection,
+} from "./result";
+
+/**
+ * Where the analysis has got to. `idle` is not "nothing happened" — it is the
+ * state a reader is in before they have asked for anything, and it has its own
+ * surface. Every other state is a surface too; none of them is a spinner or an
+ * error string.
+ */
+type Run =
+  | { kind: "idle" }
+  | { kind: "running"; reason: RunReason; startedAt: number }
+  | { kind: "done"; analysis: WireAnalysis }
+  | { kind: "failed"; failure: RunFailure };
 
 type Phase =
   | { kind: "idle" }
@@ -118,7 +146,9 @@ const SAMPLE_TEXT = paragraphs
 export function Shell() {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [request, setRequest] = useState<AnalysisRequestState>(emptyRequest());
-  const [activeFinding, setActiveFinding] = useState<string | null>(null);
+  const [run, setRun] = useState<Run>({ kind: "idle" });
+  const [selected, setSelected] = useState<Selection>(null);
+  const [elapsed, setElapsed] = useState(0);
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [question, setQuestion] = useState("");
@@ -128,6 +158,10 @@ export function Shell() {
   const [dragging, setDragging] = useState(false);
   const [restored, setRestored] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  /** Only the newest run may write a result. A reader who edits a red line
+   *  twice must not be shown the first run's answer because it came back
+   *  second. */
+  const runToken = useRef(0);
 
   const source = phase.kind === "ready" ? phase.source : null;
   const sample = source === "sample";
@@ -136,7 +170,12 @@ export function Shell() {
 
   const ingest = useCallback(async (bytes: ArrayBuffer, filename: string) => {
     setPhase({ kind: "parsing", filename, progress: 0 });
-    setActiveFinding(null);
+    // A new document is a new subject. The previous analysis quoted offsets
+    // into text that is about to be replaced, so it goes rather than hanging
+    // over the new one.
+    setRun({ kind: "idle" });
+    setSelected(null);
+    runToken.current += 1;
     // Reading hands the thread back as it goes, so a long contract repaints
     // its way through instead of freezing the page.
     const result = await parseDocument(bytes, filename, {
@@ -164,6 +203,9 @@ export function Shell() {
   const loadSample = useCallback(async () => {
     const bytes = new TextEncoder().encode(SAMPLE_TEXT);
     setPhase({ kind: "parsing", filename: SAMPLE_LETTER.filename, progress: 0 });
+    setRun({ kind: "idle" });
+    setSelected(null);
+    runToken.current += 1;
     const result = await parseDocument(
       bytes.buffer.slice(0) as ArrayBuffer,
       SAMPLE_LETTER.filename,
@@ -175,16 +217,108 @@ export function Shell() {
     if (!result.ok) return;
     setRequest((s) => setDocument(s, result.document));
     setPhase({ kind: "ready", filename: SAMPLE_LETTER.filename, source: "sample" });
-    setActiveFinding(findings[0]?.id ?? null);
   }, []);
 
   const clear = useCallback(() => {
     setRequest((s) => setDocument(s, null));
     setPhase({ kind: "idle" });
-    setActiveFinding(null);
+    setRun({ kind: "idle" });
+    setSelected(null);
+    runToken.current += 1;
     setAsked(null);
     if (fileRef.current) fileRef.current.value = "";
   }, []);
+
+  /**
+   * One run. The route takes the assembled request and answers with an
+   * analysis or with a failure; both are data, and both are surfaces here.
+   *
+   * The body is put through `parseAnalysis` rather than cast. The brand that
+   * makes a `Citation` unforgeable does not survive JSON, so what arrives is a
+   * shape, and a shape is checked. A body that does not check out is shown as
+   * a failure rather than rendered half way: a partial result reads exactly
+   * like a whole one.
+   */
+  const analyse = useCallback(
+    async (reason: RunReason, state: AnalysisRequestState) => {
+    const assembled = toAnalysisRequest(state);
+    if (!assembled) return;
+
+    const token = (runToken.current += 1);
+    setRun({ kind: "running", reason, startedAt: Date.now() });
+    setElapsed(0);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/analysis", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(assembled),
+      });
+    } catch {
+      if (token === runToken.current) {
+        setRun({ kind: "failed", failure: { kind: "no-connection" } });
+      }
+      return;
+    }
+
+    const body: unknown = await response.json().catch(() => null);
+    if (token !== runToken.current) return;
+
+    if (!response.ok) {
+      setRun({ kind: "failed", failure: interpretFailure(response.status, body) });
+      return;
+    }
+
+    const analysis = parseAnalysis(body);
+    if (!analysis) {
+      setRun({ kind: "failed", failure: { kind: "unusable" } });
+      return;
+    }
+
+    setRun({ kind: "done", analysis });
+    // The window lands on the top-ranked flag without travelling: the first
+    // paint jumps (DESIGN.md). On a clean document nothing is cropped, because
+    // there is nothing to point at.
+    setSelected(
+      analysis.flags.length
+        ? { kind: "flag", id: analysis.flags[0].flag.id }
+        : analysis.summary.claims.length
+          ? { kind: "claim", index: 0 }
+          : null,
+    );
+    },
+    [],
+  );
+
+  /**
+   * A red line edited after the analysis re-runs it, and so does a change of
+   * state — both are inputs the ranking and the second layer read. PRD §3.3
+   * requires the re-run; without it a red line is decoration.
+   *
+   * The re-run hangs off the edit itself rather than off a watcher on the
+   * state. An effect comparing the request to the last one it ran would have
+   * to decide what counts as a change, and would re-run on a restore from
+   * `sessionStorage` — which is not an edit, and which the reader did not ask
+   * for.
+   */
+  const applyAndRerun = (next: AnalysisRequestState, reason: RunReason) => {
+    if (next === request) return;
+    setRequest(next);
+    if (run.kind !== "idle" && toAnalysisRequest(next)) void analyse(reason, next);
+  };
+
+  // The elapsed count on the running surface is a real one. There is no
+  // progress to report from a single model call, so none is invented.
+  useEffect(() => {
+    if (run.kind !== "running") return;
+    const startedAt = run.startedAt;
+    const tick = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startedAt) / 1000)),
+      1000,
+    );
+    return () => clearInterval(tick);
+  }, [run]);
 
   // Everything the reader has entered survives an accidental in-page
   // navigation: the document text, the state, the red lines. sessionStorage,
@@ -215,9 +349,6 @@ export function Shell() {
             ? { kind: "ready", filename: origin.filename, source: origin.source }
             : p,
         );
-        if (origin.source === "sample") {
-          setActiveFinding((a) => a ?? findings[0]?.id ?? null);
-        }
       }
       setRestored(true);
     })();
@@ -241,18 +372,32 @@ export function Shell() {
   const missing = whatIsMissing(request);
   const ready = isReady(request);
 
-  const located = useMemo(() => {
-    if (!sample || !doc) return [];
-    return findings
-      .map((f) => ({ finding: f, span: doc.locate(f.sentence) }))
-      .filter((x) => x.span !== null) as {
-      finding: (typeof findings)[number];
-      span: { start: number; end: number };
-    }[];
-  }, [sample, doc]);
+  const analysis = run.kind === "done" ? run.analysis : null;
 
-  const activeSpan =
-    located.find((l) => l.finding.id === activeFinding)?.span ?? null;
+  /**
+   * What the window is cropped to. Every selectable thing on the right-hand
+   * column is a citation, so every one of them can drive the crop — a flag, a
+   * summary claim, the governing-law sentence. The span is the analysis's own,
+   * an offset into the very text rendered in the sheet.
+   */
+  const crop = useMemo((): { span: WireSpan; stamp: string } | null => {
+    if (!analysis || !selected) return null;
+    if (selected.kind === "flag") {
+      const index = analysis.flags.findIndex((r) => r.flag.id === selected.id);
+      if (index === -1) return null;
+      return {
+        span: analysis.flags[index].flag.citation.span,
+        stamp: stampCodes(analysis.flags)[index],
+      };
+    }
+    if (selected.kind === "claim") {
+      const claim = analysis.summary.claims[selected.index];
+      return claim ? { span: claim.citation.span, stamp: "Summary" } : null;
+    }
+    return analysis.governingLaw
+      ? { span: analysis.governingLaw.span, stamp: "Governing law" }
+      : null;
+  }, [analysis, selected]);
 
   return (
     <div className="min-h-screen bg-ink text-paper lg:flex">
@@ -272,7 +417,7 @@ export function Shell() {
         <section
           id="document"
           aria-label="Your document"
-          className="min-w-0 border-b-2 border-spot lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r-2"
+          className="min-w-0 scroll-mt-[4.75rem] border-b-2 border-spot lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r-2 lg:scroll-mt-0"
         >
           <PaneHead
             title={phase.kind === "idle" ? "Your document" : phase.kind === "ready" ? phase.filename : "Your document"}
@@ -357,12 +502,9 @@ export function Shell() {
             {phase.kind === "ready" && doc ? (
               <DocumentSheet
                 text={doc.text}
-                span={activeSpan}
-                stamp={
-                  activeFinding && sample
-                    ? located.find((l) => l.finding.id === activeFinding)?.finding.code ?? null
-                    : null
-                }
+                span={crop?.span ?? null}
+                stamp={crop?.stamp ?? null}
+                sample={sample}
               />
             ) : null}
           </div>
@@ -372,18 +514,20 @@ export function Shell() {
         <section className="min-w-0">
           <Jurisdiction
             value={request.jurisdiction}
-            onChange={(v) => setRequest((s) => setJurisdiction(s, v))}
+            onChange={(v) => applyAndRerun(setJurisdiction(request, v), "state")}
           />
 
-          <Findings
-            sample={sample}
-            phase={phase.kind}
-            located={located}
-            active={activeFinding}
-            setActive={setActiveFinding}
-            onSample={loadSample}
+          <Analysis
+            run={run}
+            elapsed={elapsed}
+            selected={selected}
+            onSelect={setSelected}
+            onRun={() => void analyse(run.kind === "idle" ? "first" : "again", request)}
             missing={missing}
             ready={ready}
+            sentences={doc?.sentences.length ?? 0}
+            jurisdiction={request.jurisdiction}
+            redLines={request.redLines.length}
           />
 
           <QuestionBox
@@ -401,17 +545,21 @@ export function Shell() {
             editing={editing}
             setEditing={setEditing}
             onAdd={() => {
-              setRequest((s) => addRedLine(s, draft));
+              applyAndRerun(addRedLine(request, draft), "red-lines");
               setDraft("");
             }}
             onSave={() => {
-              if (editing) setRequest((s) => editRedLine(s, editing.id, editing.text));
+              if (editing) {
+                applyAndRerun(
+                  editRedLine(request, editing.id, editing.text),
+                  "red-lines",
+                );
+              }
               setEditing(null);
             }}
-            onRemove={(id) => setRequest((s) => removeRedLine(s, id))}
+            onRemove={(id) => applyAndRerun(removeRedLine(request, id), "red-lines")}
+            reruns={run.kind !== "idle"}
           />
-
-          <ReadyBar missing={missing} ready={ready} request={request} />
         </section>
       </main>
     </div>
@@ -657,60 +805,6 @@ function RefusalPanel({
   );
 }
 
-function DocumentSheet({
-  text,
-  span,
-  stamp,
-}: {
-  text: string;
-  span: { start: number; end: number } | null;
-  stamp: string | null;
-}) {
-  const before = span ? text.slice(0, span.start) : text;
-  const cited = span ? text.slice(span.start, span.end) : "";
-  const after = span ? text.slice(span.end) : "";
-  const citedRef = useRef<HTMLSpanElement>(null);
-  const scrollerRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const cited = citedRef.current;
-    const scroller = scrollerRef.current;
-    if (!span || !cited || !scroller) return;
-    if (!window.matchMedia("(min-width: 1024px)").matches) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scroller.scrollTo({
-      top: Math.max(0, cited.offsetTop - scroller.clientHeight * 0.35),
-      behavior: reduce ? "auto" : "smooth",
-    });
-  }, [span]);
-
-  return (
-    <figure
-      ref={scrollerRef}
-      className="sheet sheet-scroll relative flex min-h-0 max-h-[70vh] flex-1 flex-col overflow-y-auto border-2 border-spot bg-paper lg:max-h-none"
-    >
-      <pre className="document whitespace-pre-wrap px-5 py-5 text-[0.9375rem] text-ink sm:px-7 sm:text-base">
-        {span ? (
-          <>
-            <span className="opacity-[0.62]">{before}</span>
-            <span ref={citedRef} className="cited">
-              {cited}
-            </span>
-            <span className="opacity-[0.62]">{after}</span>
-          </>
-        ) : (
-          text
-        )}
-      </pre>
-      {stamp ? (
-        <figcaption className="label sticky bottom-0 border-t-2 border-ink bg-ink px-4 py-2 text-spot">
-          {stamp} · windowed in your document
-        </figcaption>
-      ) : null}
-    </figure>
-  );
-}
-
 /* ── Where you work ──────────────────────────────────────────────────── */
 
 function Jurisdiction({
@@ -782,153 +876,6 @@ function Jurisdiction({
         )}
       </div>
     </div>
-  );
-}
-
-/* ── Findings ────────────────────────────────────────────────────────── */
-
-function Findings({
-  sample,
-  phase,
-  located,
-  active,
-  setActive,
-  onSample,
-  missing,
-  ready,
-}: {
-  sample: boolean;
-  phase: Phase["kind"];
-  located: { finding: (typeof findings)[number]; span: { start: number; end: number } }[];
-  active: string | null;
-  setActive: (id: string) => void;
-  onSample: () => void;
-  missing: string[];
-  ready: boolean;
-}) {
-  return (
-    <>
-      <SectionHead
-        id="findings"
-        title="Findings"
-        note={sample ? "Ranked by escapability, then money" : undefined}
-      />
-      <div className="px-4 py-4 sm:px-6">
-        {sample ? (
-          <>
-            <ul className="border-t-2 border-spot">
-              {located.map(({ finding, span }) => {
-                const isActive = finding.id === active;
-                return (
-                  <li key={finding.id} className="border-b border-spot/40">
-                    <button
-                      type="button"
-                      aria-pressed={isActive}
-                      onClick={() => setActive(finding.id)}
-                      className={`block w-full px-3 py-3 text-left transition-colors duration-200 ${
-                        isActive ? "bg-spot text-ink" : "text-paper hover:bg-spot/15"
-                      }`}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="label tabular">{finding.code}</span>
-                        <span
-                          className="sev-bar"
-                          style={{ width: finding.severity === "Critical" ? 40 : 20 }}
-                          aria-hidden="true"
-                        />
-                        <span className="label">{finding.severity}</span>
-                      </span>
-                      <span className="mt-1.5 block font-voice text-[1.0625rem] font-semibold leading-snug">
-                        {finding.title}
-                      </span>
-                      <span
-                        className={`label tabular mt-1.5 block ${
-                          isActive ? "text-ink/75" : "text-paper/60"
-                        }`}
-                      >
-                        Quote located · chars {span.start.toLocaleString()}–
-                        {span.end.toLocaleString()}
-                      </span>
-                    </button>
-
-                    {isActive ? (
-                      <div className="space-y-4 bg-spot/10 px-3 pb-4 pt-3">
-                        <div className="border-2 border-spot bg-paper lg:hidden">
-                          <p className="label border-b-2 border-spot px-3 py-1.5 text-ink">
-                            From your document · chars{" "}
-                            {span.start.toLocaleString()}–{span.end.toLocaleString()}
-                          </p>
-                          <p className="document px-3 py-2.5 text-[0.9375rem] text-ink">
-                            {finding.sentence}
-                          </p>
-                        </div>
-
-                        <dl className="tabular grid gap-x-8 sm:grid-cols-2">
-                          {finding.measures.map((m) => (
-                            <div key={m.label} className="border-b border-spot/35 py-1.5">
-                              <dt className="label text-paper/60">{m.label}</dt>
-                              <dd className="mt-0.5 font-voice text-sm font-semibold text-paper">
-                                {m.value}
-                              </dd>
-                            </div>
-                          ))}
-                        </dl>
-                        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
-                          {finding.meaning}
-                        </p>
-                        <div className="border-t-2 border-spot pt-3">
-                          <p className="label text-spot">Counter-offer to send back</p>
-                          <p className="mt-1.5 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
-                            {finding.counter}
-                          </p>
-                        </div>
-                        <div className="border-2 border-dashed border-spot">
-                          <p className="label border-b-2 border-dashed border-spot px-3 py-1.5 text-spot">
-                            Not from your document · general context
-                          </p>
-                          <div className="flex items-stretch">
-<div className="halftone-ink w-7 shrink-0 border-r-2 border-dashed border-spot" aria-hidden="true" />
-<p className="px-3 py-2 font-voice text-sm leading-relaxed text-paper">
-                            Enforceability for your state is a separate layer and is
-                            not built yet. It will sit here, labelled, and it will
-                            never change the severity above.
-                          </p>
-</div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="label mt-3 text-paper/60">
-              All {located.length} quotes matched the stored text. None dropped.
-            </p>
-          </>
-        ) : (
-          <div className="border-2 border-dashed border-paper/40 px-4 py-6">
-            <p className="font-voice text-[1.0625rem] leading-relaxed text-paper">
-              {phase === "ready"
-                ? "Your document is read and the text above is exactly what would be analysed. The analysis itself is not built yet."
-                : `Nothing to rank yet — still missing ${missing.join(" and ")}.`}
-            </p>
-            <p className="mt-3 max-w-[62ch] font-voice text-sm leading-relaxed text-paper/75">
-              When it runs, every flag here will quote a sentence from the panel
-              beside it, and any flag whose sentence cannot be found in your
-              stored text will be dropped before you see it.
-            </p>
-            {phase === "ready" && ready ? (
-              <p className="label mt-3 text-spot">
-                Intake complete — the analysis request is assembled.
-              </p>
-            ) : null}
-            <button type="button" onClick={onSample} className="mark mt-4 underline decoration-2">
-              See it on a sample contract
-            </button>
-          </div>
-        )}
-      </div>
-    </>
   );
 }
 
@@ -1017,6 +964,7 @@ function RedLines({
   onAdd,
   onSave,
   onRemove,
+  reruns,
 }: {
   lines: { id: string; text: string }[];
   draft: string;
@@ -1026,6 +974,10 @@ function RedLines({
   onAdd: () => void;
   onSave: () => void;
   onRemove: (id: string) => void;
+  /** Whether an analysis exists, so a change here re-runs it. Said on screen
+   *  before the reader types, because an edit that silently re-reads their
+   *  document is a surprise. */
+  reruns: boolean;
 }) {
   return (
     <>
@@ -1047,6 +999,11 @@ function RedLines({
           either way. A red line never hides one, and never ranks one lower
           than it would have been on its own.
         </p>
+        {reruns ? (
+          <p className="label mt-3 max-w-[62ch] leading-relaxed text-spot">
+            Adding, editing or deleting a line here reads the document again.
+          </p>
+        ) : null}
 
         <form
           className="mt-4 flex flex-wrap gap-3"
@@ -1147,40 +1104,104 @@ function RedLines({
   );
 }
 
-/* ── Readiness ───────────────────────────────────────────────────────── */
 
-function ReadyBar({
+/* ── The analysis ────────────────────────────────────────────────────── */
+
+/**
+ * The whole right-hand column between intake and the question box: the control
+ * that starts a run, every state a run can be in, and the result itself.
+ *
+ * Each state is a surface with something to say. Idle explains what is about
+ * to happen to the text and what will be refused; running says what standard
+ * is being applied to whatever comes back; failure says what it means for the
+ * reader's document and whether trying again is worth anything; and a finished
+ * analysis leads with the summary, or on a clean document with the receipt.
+ */
+function Analysis({
+  run,
+  elapsed,
+  selected,
+  onSelect,
+  onRun,
   missing,
   ready,
-  request,
+  sentences,
+  jurisdiction,
+  redLines,
 }: {
+  run: Run;
+  elapsed: number;
+  selected: Selection;
+  onSelect: (selection: Selection) => void;
+  onRun: () => void;
   missing: string[];
   ready: boolean;
-  request: AnalysisRequestState;
+  sentences: number;
+  jurisdiction: UsState | null;
+  redLines: number;
 }) {
-  const assembled = toAnalysisRequest(request);
   return (
-    <div className="border-t-2 border-spot px-4 py-4 sm:px-6">
-      {ready && assembled ? (
-        <>
-          <p className="label text-spot">Ready to analyse</p>
-          <p className="mt-2 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-            {assembled.sentences.length} sentences, {assembled.jurisdiction},{" "}
-            {assembled.redLines.length === 0
-              ? "no red lines"
-              : `${assembled.redLines.length} red line${assembled.redLines.length === 1 ? "" : "s"}`}
-            . The analysis is the next thing to be built; nothing has been sent
-            anywhere.
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="label text-paper/70">Not ready yet</p>
-          <p className="mt-2 font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-            Still needed: {missing.join(" and ")}.
-          </p>
-        </>
-      )}
-    </div>
+    <>
+      <SectionHead
+        id="findings"
+        title="The analysis"
+        note={
+          run.kind === "done"
+            ? "Every claim below shows the sentence it came from"
+            : "Nothing is sent anywhere until you ask for it"
+        }
+      />
+
+      <div className="px-4 py-4 sm:px-6">
+        {run.kind === "idle" ? (
+          <div className="border-2 border-spot px-4 py-4">
+            <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+              {ready
+                ? "Your document is read. The text beside this is exactly what gets analysed, and nothing has been sent anywhere yet."
+                : `Nothing to analyse yet — still missing ${missing.join(" and ")}.`}
+            </p>
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+              Every flag that comes back quotes a sentence from that panel. A
+              flag whose sentence cannot be found in your stored text is
+              dropped before it reaches you.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                onClick={onRun}
+                disabled={!ready}
+                className="slug label slug-on-ink"
+              >
+                <span>Analyse this document</span>
+              </button>
+            </div>
+            {ready ? (
+              <p className="label tabular mt-3 text-paper/70">
+                {sentences.toLocaleString()} sentences · {jurisdiction} ·{" "}
+                {redLines === 0
+                  ? "no red lines"
+                  : `${redLines} red line${redLines === 1 ? "" : "s"}`}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {run.kind === "running" ? (
+          <Running
+            reason={run.reason}
+            elapsed={elapsed}
+            sentences={sentences}
+            jurisdiction={jurisdiction ?? "no state set"}
+            redLines={redLines}
+          />
+        ) : null}
+
+        {run.kind === "failed" ? <Failed failure={run.failure} onRetry={onRun} /> : null}
+      </div>
+
+      {run.kind === "done" ? (
+        <Result analysis={run.analysis} selected={selected} onSelect={onSelect} />
+      ) : null}
+    </>
   );
 }
