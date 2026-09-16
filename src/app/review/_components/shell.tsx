@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   addRedLine,
   editRedLine,
@@ -207,8 +208,16 @@ export function Shell() {
 
   const source = phase.kind === "ready" ? phase.source : null;
   const sample = source === "sample";
-  const origin: IntakeOrigin | null =
-    phase.kind === "ready" ? { filename: phase.filename, source: phase.source } : null;
+  // Memoised because the session-save effect depends on it. A fresh object
+  // every render would make that effect run every render, rewriting
+  // sessionStorage continuously for a value that had not changed.
+  const origin: IntakeOrigin | null = useMemo(
+    () =>
+      phase.kind === "ready"
+        ? { filename: phase.filename, source: phase.source }
+        : null,
+    [phase],
+  );
 
   const ingest = useCallback(async (bytes: ArrayBuffer, filename: string) => {
     setPhase({ kind: "parsing", filename, progress: 0 });
@@ -817,9 +826,9 @@ function Rail({
   ];
   return (
     <div className="sticky top-0 z-20 flex items-center gap-4 border-b-2 border-ink bg-spot px-4 py-3 text-ink lg:h-screen lg:w-56 lg:flex-col lg:items-stretch lg:gap-6 lg:border-b-0 lg:border-r-2 lg:px-4 lg:py-5">
-      <a href="/" className="display mark-ink shrink-0 border-2 border-ink px-2 py-1 text-xl">
+      <Link href="/" className="display mark-ink shrink-0 border-2 border-ink px-2 py-1 text-xl">
         Redline
-      </a>
+      </Link>
       <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto lg:flex-col lg:gap-1 lg:overflow-visible">
         {marks.map((m) => (
           <a key={m.href} href={m.href} className="mark mark-ink shrink-0 px-1 py-0.5 lg:py-1">

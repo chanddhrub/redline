@@ -126,7 +126,8 @@ describe("the second layer as it arrives over the wire", () => {
     const body = (await bodyFor("adhesion-contract")) as {
       context: Record<string, unknown>[];
     };
-    const { topic: _topic, ...rest } = body.context[0];
+    const rest = { ...body.context[0] };
+    delete rest.topic;
     body.context[0] = rest;
 
     expect(parseAnalysis(body)).toBeNull();
