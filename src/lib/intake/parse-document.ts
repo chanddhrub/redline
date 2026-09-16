@@ -49,6 +49,16 @@ export type ParseResult =
   | { ok: true; document: ParsedDocument }
   | { ok: false; refusal: Refusal };
 
+/** Called with a fraction between 0 and 1 while the document is being read,
+ *  and once with 1 when it is done. Reading yields the thread between calls,
+ *  so a several-hundred-KB contract reports its way through rather than
+ *  locking the page into an apparent hang. */
+export type ProgressListener = (fraction: number) => void;
+
+export interface ParseOptions {
+  onProgress?: ProgressListener;
+}
+
 /** Abbreviations and enumerations whose full stop does not end a sentence. */
 const NON_TERMINAL = [
   "inc.",
@@ -77,12 +87,32 @@ const NON_TERMINAL = [
 
 function endsWithNonTerminal(chunk: string): boolean {
   const tail = chunk.trimEnd().toLowerCase();
-  if (NON_TERMINAL.some((a) => tail.endsWith(a))) return true;
+  for (const abbr of NON_TERMINAL) {
+    if (!tail.endsWith(abbr)) continue;
+    // The abbreviation has to be a word of its own. Without this, a sentence
+    // ending in "Reno." or "Tabasco." is swallowed into the next one.
+    const before = tail[tail.length - abbr.length - 1];
+    if (before === undefined || !/[a-z0-9]/.test(before)) return true;
+  }
   // Section numbers: "3.", "3.2." — a digit-run before the stop.
   return /(?:^|[\s(])\d+(?:\.\d+)*\.$/.test(tail);
 }
 
-function segment(text: string): Sentence[] {
+/** How many segments are taken before the loop hands the thread back. Small
+ *  enough that a several-hundred-KB contract keeps repainting while it is read;
+ *  large enough that the yields are not themselves the cost. */
+const SEGMENTS_PER_YIELD = 400;
+
+/** Hands control back to the host so the browser can paint the progress the
+ *  caller has just been told about. In Node this is simply the next macrotask. */
+function handBack(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function segment(
+  text: string,
+  onProgress?: ProgressListener,
+): Promise<Sentence[]> {
   const out: Sentence[] = [];
   if (!("Segmenter" in Intl)) {
     // Environments without Intl.Segmenter still get whole-text citation
@@ -91,47 +121,50 @@ function segment(text: string): Sentence[] {
   }
   const seg = new Intl.Segmenter("en", { granularity: "sentence" });
 
+  const push = (from: number, to: number) => {
+    const raw = text.slice(from, to);
+    if (!raw.trim()) return;
+    const lead = raw.length - raw.trimStart().length;
+    const trail = raw.length - raw.trimEnd().length;
+    out.push({
+      text: text.slice(from + lead, to - trail),
+      start: from + lead,
+      end: to - trail,
+    });
+  };
+
   let pendingStart: number | null = null;
+  let seen = 0;
   for (const piece of seg.segment(text)) {
     const start = piece.index;
     const end = start + piece.segment.length;
     if (pendingStart === null) pendingStart = start;
 
+    seen += 1;
+    if (seen % SEGMENTS_PER_YIELD === 0) {
+      onProgress?.(text.length === 0 ? 1 : end / text.length);
+      await handBack();
+    }
+
     // Re-join a split caused by a legal abbreviation or a clause number.
     if (endsWithNonTerminal(piece.segment) && end < text.length) continue;
 
-    const raw = text.slice(pendingStart, end);
-    if (raw.trim()) {
-      const lead = raw.length - raw.trimStart().length;
-      const trail = raw.length - raw.trimEnd().length;
-      out.push({
-        text: text.slice(pendingStart + lead, end - trail),
-        start: pendingStart + lead,
-        end: end - trail,
-      });
-    }
+    push(pendingStart, end);
     pendingStart = null;
   }
 
-  if (pendingStart !== null) {
-    const raw = text.slice(pendingStart);
-    if (raw.trim()) {
-      const lead = raw.length - raw.trimStart().length;
-      const trail = raw.length - raw.trimEnd().length;
-      out.push({
-        text: text.slice(pendingStart + lead, text.length - trail),
-        start: pendingStart + lead,
-        end: text.length - trail,
-      });
-    }
-  }
+  if (pendingStart !== null) push(pendingStart, text.length);
   return out;
 }
 
-function makeDocument(text: string): ParsedDocument {
+async function makeDocument(
+  text: string,
+  onProgress?: ProgressListener,
+): Promise<ParsedDocument> {
+  const sentences = await segment(text, onProgress);
   return {
     text,
-    sentences: segment(text),
+    sentences,
     locate(quote: string): Span | null {
       if (!quote) return null;
       const start = text.indexOf(quote);
@@ -165,8 +198,11 @@ function decodeUtf8(bytes: Uint8Array): string | null {
 export async function parseDocument(
   bytes: ArrayBuffer,
   filename: string,
+  options: ParseOptions = {},
 ): Promise<ParseResult> {
   void filename;
+  const onProgress = options.onProgress;
+  onProgress?.(0);
   const view = new Uint8Array(bytes);
 
   if (view.byteLength === 0) return { ok: false, refusal: { kind: "empty" } };
@@ -185,5 +221,7 @@ export async function parseDocument(
 
   if (!text.trim()) return { ok: false, refusal: { kind: "empty" } };
 
-  return { ok: true, document: makeDocument(text) };
+  const document = await makeDocument(text, onProgress);
+  onProgress?.(1);
+  return { ok: true, document };
 }

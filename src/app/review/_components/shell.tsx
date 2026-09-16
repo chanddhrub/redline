@@ -24,7 +24,7 @@ import { findings, paragraphs, SAMPLE_LETTER } from "@/app/_demo/sample";
 
 type Phase =
   | { kind: "idle" }
-  | { kind: "parsing"; filename: string }
+  | { kind: "parsing"; filename: string; progress: number }
   | { kind: "refused"; refusal: Refusal; filename: string }
   | { kind: "ready"; filename: string; source: "yours" | "sample" };
 
@@ -83,9 +83,14 @@ export function Shell() {
   const sample = source === "sample";
 
   const ingest = useCallback(async (bytes: ArrayBuffer, filename: string) => {
-    setPhase({ kind: "parsing", filename });
+    setPhase({ kind: "parsing", filename, progress: 0 });
     setActiveFinding(null);
-    const result = await parseDocument(bytes, filename);
+    // Reading hands the thread back as it goes, so a long contract repaints
+    // its way through instead of freezing the page.
+    const result = await parseDocument(bytes, filename, {
+      onProgress: (progress) =>
+        setPhase((p) => (p.kind === "parsing" ? { ...p, progress } : p)),
+    });
     if (!result.ok) {
       setRequest((s) => setDocument(s, null));
       setPhase({ kind: "refused", refusal: result.refusal, filename });
@@ -106,10 +111,14 @@ export function Shell() {
 
   const loadSample = useCallback(async () => {
     const bytes = new TextEncoder().encode(SAMPLE_TEXT);
-    setPhase({ kind: "parsing", filename: SAMPLE_LETTER.filename });
+    setPhase({ kind: "parsing", filename: SAMPLE_LETTER.filename, progress: 0 });
     const result = await parseDocument(
       bytes.buffer.slice(0) as ArrayBuffer,
       SAMPLE_LETTER.filename,
+      {
+        onProgress: (progress) =>
+          setPhase((p) => (p.kind === "parsing" ? { ...p, progress } : p)),
+      },
     );
     if (!result.ok) return;
     setRequest((s) => setDocument(s, result.document));
@@ -253,10 +262,7 @@ export function Shell() {
             ) : null}
 
             {phase.kind === "parsing" ? (
-              <p className="label flex items-center gap-3 text-spot">
-                <span className="sev-bar w-10 animate-pulse" aria-hidden="true" />
-                Reading {phase.filename}…
-              </p>
+              <Reading filename={phase.filename} progress={phase.progress} />
             ) : null}
 
             {phase.kind === "refused" ? (
@@ -468,6 +474,34 @@ function Dropzone({
           Load a sample contract
         </button>{" "}
         — a synthetic offer letter, not a real one.
+      </p>
+    </div>
+  );
+}
+
+/** Reading reports how far it has got. A long contract hands the thread back
+ *  as it goes, so this number moves rather than sitting at nothing while the
+ *  page looks frozen. */
+function Reading({ filename, progress }: { filename: string; progress: number }) {
+  const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
+  return (
+    <div className="border-2 border-spot px-4 py-4">
+      <p className="label text-spot">Reading {filename}</p>
+      <div
+        role="progressbar"
+        aria-label={`Reading ${filename}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        className="mt-3 h-3 w-full border-2 border-spot"
+      >
+        <span
+          className="block h-full bg-spot transition-[width] duration-200 ease-out motion-reduce:transition-none"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="label tabular mt-2 text-paper/70">
+        {pct}% read · in this browser
       </p>
     </div>
   );

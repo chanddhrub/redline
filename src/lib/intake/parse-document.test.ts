@@ -29,8 +29,34 @@ describe("parseDocument — what comes back", () => {
     expect(result.document.text).toBe(onDisk);
   });
 
+  // The stored text is what the reader is shown and what a flag is quoted
+  // from, so a line ending, a run of spaces or a blank first line has to
+  // survive intake untouched (ADR 0001).
+  it("trims, collapses and reformats nothing on the way in", async () => {
+    const result = await parseFixture("whitespace.txt");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const onDisk = readFileSync(join(FIXTURES, "whitespace.txt"), "utf8");
+    expect(result.document.text).toBe(onDisk);
+    expect(result.document.text.startsWith("\r\n   \r\n")).toBe(true);
+    expect(result.document.text.endsWith("\r\n\r\n   ")).toBe(true);
+    expect(result.document.text).toContain("Your  start date");
+  });
+
   it("refuses an empty file", async () => {
     const result = await parseFixture("empty.txt");
+    expect(result).toEqual({ ok: false, refusal: { kind: "empty" } });
+  });
+
+  it("refuses a file that is nothing but whitespace", async () => {
+    const blank = new TextEncoder().encode("   \n\t\n  ");
+    const result = await parseDocument(
+      blank.buffer.slice(
+        blank.byteOffset,
+        blank.byteOffset + blank.byteLength,
+      ) as ArrayBuffer,
+      "blank.txt",
+    );
     expect(result).toEqual({ ok: false, refusal: { kind: "empty" } });
   });
 
@@ -75,6 +101,24 @@ describe("sentences", () => {
 
     const withSection = doc.sentences.find((s) => s.text.includes("Section 3.2"));
     expect(withSection?.text).toContain("binding arbitration.");
+  });
+
+  it("does not split on e.g., i.e. or No.", async () => {
+    const doc = await offer();
+
+    const withEg = doc.sentences.find((s) => s.text.includes("(e.g., source code"));
+    expect(withEg?.text).toContain("made on Company equipment.");
+
+    const withNo = doc.sentences.find((s) => s.text.includes("Policy No. 14"));
+    expect(withNo?.text).toContain("before your start date.");
+    expect(withNo?.text).toContain("i.e., the provisions");
+  });
+
+  it("still splits a sentence whose last word merely ends like an abbreviation", async () => {
+    const doc = await offer();
+    expect(doc.sentences.map((s) => s.text)).toContain(
+      "Relocation is not required during your first year.",
+    );
   });
 });
 
@@ -127,5 +171,58 @@ describe("locate", () => {
   it("returns null for an empty quote rather than matching position zero", async () => {
     const doc = await offer();
     expect(doc.locate("")).toBeNull();
+  });
+});
+
+describe("a long document", () => {
+  // Several hundred KB of contract: the case where reading must report its way
+  // through rather than stall. Generated here rather than committed, so the
+  // fixture directory stays readable.
+  function longContract(): { text: string; bytes: ArrayBuffer } {
+    const base = readFileSync(join(FIXTURES, "offer.txt"), "utf8");
+    let text = "";
+    while (text.length < 400_000) text += base + "\n\n";
+    const encoded = new TextEncoder().encode(text);
+    return {
+      text,
+      bytes: encoded.buffer.slice(
+        encoded.byteOffset,
+        encoded.byteOffset + encoded.byteLength,
+      ) as ArrayBuffer,
+    };
+  }
+
+  it("finishes, reports progress on the way, and ends at 1", async () => {
+    const { text, bytes } = longContract();
+    const seen: number[] = [];
+    const result = await parseDocument(bytes, "long-offer.txt", {
+      onProgress: (f) => seen.push(f),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.text).toBe(text);
+
+    // More than just the bookends: the read hands the thread back repeatedly,
+    // which is what keeps the page painting instead of hanging.
+    expect(seen.length).toBeGreaterThan(2);
+    expect(seen[0]).toBe(0);
+    expect(seen[seen.length - 1]).toBe(1);
+    for (const f of seen) {
+      expect(f).toBeGreaterThanOrEqual(0);
+      expect(f).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("keeps every offset true to the text it indexes", async () => {
+    const { bytes } = longContract();
+    const result = await parseDocument(bytes, "long-offer.txt");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const doc = result.document;
+    expect(doc.sentences.length).toBeGreaterThan(100);
+    for (const sentence of doc.sentences) {
+      expect(doc.text.slice(sentence.start, sentence.end)).toBe(sentence.text);
+    }
   });
 });

@@ -8,3 +8,7 @@ We are delighted to offer you the position of Senior Software Engineer at Northw
 2. Non-competition. For a period of eighteen (18) months following the termination of your employment for any reason, you shall not, directly or indirectly, engage in or provide services to any business that competes with the Company anywhere in the United States.
 
 3. Dispute resolution. Any dispute arising under Section 3.2 of this Agreement, or relating to your employment, shall be resolved exclusively by final and binding arbitration. Northwind Analytics, Inc. shall bear the filing fee.
+
+4. Inventions. Every invention, design, or improvement you create during your employment (e.g., source code, schematics, or internal documentation) becomes the property of the Company, whether or not it was made on Company equipment. This clause is governed by Policy No. 14 and by Section 4.1, i.e., the provisions covering prior inventions you list in writing before your start date.
+
+5. Work location. Your primary work location is the Company office in Reno. Relocation is not required during your first year.
