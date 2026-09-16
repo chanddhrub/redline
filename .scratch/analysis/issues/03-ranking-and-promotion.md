@@ -1,6 +1,6 @@
 # 03: Ranking, severity and promotion
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** The order the reader sees, decided by us rather than by the
 model. Pure, deterministic, no I/O.
@@ -25,16 +25,16 @@ default. `Flag` has no writable severity field.
 
 **Blocked by:** 02.
 
-- [ ] Default severity per clause type matches PRD §5 exactly and is set in one
+- [x] Default severity per clause type matches PRD §5 exactly and is set in one
       place
-- [ ] Ranking is a total order: promoted first, then band, then escapability
+- [x] Ranking is a total order: promoted first, then band, then escapability
       inputs, then money, then span position
-- [ ] The same flags in a shuffled input order rank identically, asserted over
+- [x] The same flags in a shuffled input order rank identically, asserted over
       repeated runs
-- [ ] A matching red line promotes its flag to the top and names the line
+- [x] A matching red line promotes its flag to the top and names the line
       crossed
-- [ ] A claimed match to a red line the user never declared is dropped and the
+- [x] A claimed match to a red line the user never declared is dropped and the
       flag ranks unpromoted
-- [ ] No red line ever lowers a flag's severity below its default, asserted
-- [ ] Ranking is pure — no React, no storage, no model call
-- [ ] "Unusual is not dangerous": nothing in the ranking reads unusualness
+- [x] No red line ever lowers a flag's severity below its default, asserted
+- [x] Ranking is pure — no React, no storage, no model call
+- [x] "Unusual is not dangerous": nothing in the ranking reads unusualness
