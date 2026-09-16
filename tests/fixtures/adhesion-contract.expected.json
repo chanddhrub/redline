@@ -1,0 +1,146 @@
+{
+  "document": "adhesion-contract.txt",
+  "description": "A Texas employer's offer letter and attached employee agreement for a software engineer, carrying a planted clause of each of the four v1 clause types plus harmless decoys.",
+  "jurisdiction": "CA",
+  "governingLaw": "This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of laws principles.",
+  "expectedFlags": [
+    {
+      "id": "noncompete-18-months-us-canada",
+      "clauseType": "non-compete",
+      "sourceSentence": "For a period of eighteen (18) months following the termination of your employment for any reason, you shall not, directly or indirectly, own, manage, operate, join, control, be employed by, consult for, or participate in any manner in the ownership, management, operation, or control of any Competitive Business anywhere in the Restricted Territory.",
+      "expectedSeverity": "critical",
+      "meaning": "For eighteen months after you leave for any reason, you may not work for, consult for, or hold an interest in any competing data or analytics business anywhere in the United States or Canada.",
+      "counterOffer": "For a period of six (6) months following the termination of your employment by the Company for Cause or your voluntary resignation, you shall not be employed by or consult for any of the named competitors listed on Schedule B in a role substantially similar to your role at the Company, and this restriction shall not apply if your employment is terminated by the Company without Cause.",
+      "escapability": {
+        "duration": "eighteen (18) months",
+        "geographicScope": "the United States and Canada",
+        "activityBreadth": "own, manage, operate, join, control, be employed by, consult for, or participate in any manner in any Competitive Business",
+        "survivesTerminationWithoutCause": "yes, it applies following termination for any reason"
+      }
+    },
+    {
+      "id": "nonsolicit-18-months-customers-and-employees",
+      "clauseType": "non-compete",
+      "sourceSentence": "For a period of eighteen (18) months following the termination of your employment, you shall not solicit, recruit, or induce any employee, contractor, customer, or prospective customer of the Company to terminate or reduce their relationship with the Company.",
+      "expectedSeverity": "critical",
+      "meaning": "For eighteen months after you leave, you may not approach any employee, contractor, customer, or prospective customer of the Company to end or reduce their relationship with it.",
+      "counterOffer": "For a period of twelve (12) months following the termination of your employment, you shall not directly solicit any employee of the Company with whom you worked in the twelve (12) months before your departure, and nothing in this Section restricts general advertising, responses to inbound inquiries, or your dealings with any customer or prospective customer.",
+      "escapability": {
+        "duration": "eighteen (18) months",
+        "geographicScope": "not stated in the sentence",
+        "activityBreadth": "solicit, recruit, or induce any employee, contractor, customer, or prospective customer",
+        "survivesTerminationWithoutCause": "yes, it applies following termination of your employment"
+      }
+    },
+    {
+      "id": "arbitration-all-employment-claims-dallas",
+      "clauseType": "arbitration",
+      "sourceSentence": "You and the Company agree that any and all claims, disputes, or controversies arising out of or relating to your employment, the termination of your employment, or this Agreement, including claims of discrimination, harassment, retaliation, wrongful termination, and claims for unpaid wages, shall be resolved exclusively by final and binding arbitration administered in Dallas County, Texas.",
+      "expectedSeverity": "critical",
+      "meaning": "You give up going to court over anything to do with this job, including discrimination, harassment, retaliation, wrongful termination, and unpaid wages, and take it to binding arbitration in Dallas County, Texas instead.",
+      "counterOffer": "You and the Company may, by mutual written agreement made after a dispute arises, submit that dispute to arbitration, and claims of discrimination, harassment, retaliation, and unpaid wages are excluded from arbitration and may be brought in any court of competent jurisdiction where you work.",
+      "escapability": {
+        "scopeOfCoveredDisputes": "any and all claims, disputes, or controversies arising out of or relating to your employment, the termination of your employment, or this Agreement, including discrimination, harassment, retaliation, wrongful termination, and unpaid wages",
+        "classActionWaiver": "not stated in this sentence; stated separately in Section 7.2",
+        "forum": "final and binding arbitration administered in Dallas County, Texas",
+        "carveOuts": "none stated in this sentence"
+      }
+    },
+    {
+      "id": "class-action-waiver",
+      "clauseType": "arbitration",
+      "sourceSentence": "You waive any right to bring, join, or participate in any class action, collective action, or representative action in any forum, and the arbitrator shall have no authority to hear any claim on a class or collective basis.",
+      "expectedSeverity": "critical",
+      "meaning": "You give up joining any class, collective, or representative action anywhere, and the arbitrator is not allowed to hear a claim on that basis.",
+      "counterOffer": "Nothing in this Agreement waives your right to bring, join, or participate in a class, collective, or representative action, and the arbitrator shall have authority to hear claims on a class or collective basis where the applicable rules permit.",
+      "escapability": {
+        "scopeOfCoveredDisputes": "any class action, collective action, or representative action in any forum",
+        "classActionWaiver": "yes, explicit",
+        "forum": "no forum available for class or collective claims",
+        "carveOuts": "none stated"
+      }
+    },
+    {
+      "id": "arbitration-costs-split-equally",
+      "clauseType": "arbitration",
+      "sourceSentence": "The fees and costs of the arbitrator and of the administering organization shall be borne equally by you and the Company, and each party shall bear its own attorney fees regardless of outcome.",
+      "expectedSeverity": "critical",
+      "meaning": "You pay half of the arbitrator's and the administering organization's fees and all of your own legal fees, whether you win or lose.",
+      "counterOffer": "The Company shall bear all fees and costs of the arbitrator and of the administering organization that exceed the filing fee you would have paid to bring the claim in court, and the arbitrator may award attorney fees to you to the extent available under the statute on which your claim is based.",
+      "escapability": {
+        "scopeOfCoveredDisputes": "all arbitrations under this Agreement",
+        "classActionWaiver": "not stated in this sentence",
+        "forum": "not stated in this sentence",
+        "costBearer": "arbitrator and administrator fees borne equally by you and the Company; each party bears its own attorney fees regardless of outcome"
+      }
+    },
+    {
+      "id": "ip-assignment-off-hours-off-equipment",
+      "clauseType": "ip-assignment",
+      "sourceSentence": "You hereby assign to the Company your entire right, title, and interest in any invention, work of authorship, discovery, improvement, design, or computer program that you conceive, develop, or reduce to practice during the term of your employment, whether or not conceived during working hours and whether or not developed using Company equipment or facilities.",
+      "expectedSeverity": "high",
+      "meaning": "Anything you invent, write, or build while employed here belongs to the Company, including work done on your own time and on your own machine.",
+      "counterOffer": "You hereby assign to the Company your right, title, and interest in any invention, work of authorship, or computer program that you conceive, develop, or reduce to practice within the scope of your employment, using Company time, equipment, or Confidential Information, and that relates to the business of the Company, and this assignment does not extend to any invention listed on the attached Schedule of Prior Inventions or developed entirely on your own time and equipment outside the Company's business.",
+      "escapability": {
+        "coversWorkOutsideWorkingHours": "yes, whether or not conceived during working hours",
+        "coversWorkOffCompanyEquipment": "yes, whether or not developed using Company equipment or facilities",
+        "limitedToEmployerField": "no, no field-of-business limit is stated",
+        "priorInventionsSchedule": "none, no schedule or exclusion mechanism is offered in the sentence"
+      }
+    },
+    {
+      "id": "moonlighting-ban-all-outside-work",
+      "clauseType": "ip-assignment",
+      "sourceSentence": "During your employment, you shall not engage in any outside employment, consulting, advisory, or independent development activity of any kind, whether or not compensated and whether or not related to the business of the Company.",
+      "expectedSeverity": "high",
+      "meaning": "While employed here you may not do any outside work at all, paid or unpaid, even if it has nothing to do with the Company's business.",
+      "counterOffer": "During your employment, you may engage in outside employment, consulting, advisory, or development activity provided that it does not compete with the Company's business and does not interfere with your duties, and you will notify the Company in writing of any such engagement that is compensated.",
+      "escapability": {
+        "outsideWorkBarredOutright": "yes, barred outright rather than subject to consent",
+        "coversUncompensatedWork": "yes, whether or not compensated",
+        "limitedToEmployerField": "no, whether or not related to the business of the Company",
+        "duration": "during your employment"
+      }
+    },
+    {
+      "id": "signing-bonus-repayment-24-months",
+      "clauseType": "equity-clawback",
+      "sourceSentence": "If your employment terminates for any reason, whether voluntary or involuntary, before the completion of twenty-four (24) months of continuous service, you agree to repay to the Company the full gross amount of the $40,000 signing bonus within thirty (30) days of your last day of employment.",
+      "expectedSeverity": "high",
+      "meaning": "If you leave or are let go for any reason within two years, you owe the Company the whole $40,000 signing bonus back within thirty days, with no proration.",
+      "counterOffer": "If you resign voluntarily, other than for Good Reason, before the completion of twelve (12) months of continuous service, you agree to repay a pro rata portion of the net after-tax amount of the signing bonus equal to the unserved portion of that twelve (12) month period, payable within ninety (90) days of your last day of employment, and no repayment is owed if your employment ends for any other reason.",
+      "escapability": {
+        "repaymentTrigger": "termination for any reason, voluntary or involuntary, before twenty-four (24) months of continuous service",
+        "repaymentWindow": "within thirty (30) days of your last day of employment",
+        "proratedOrFull": "full gross amount",
+        "amountAtStake": "$40,000"
+      }
+    },
+    {
+      "id": "equity-repurchase-vested-shares-on-breach",
+      "clauseType": "equity-clawback",
+      "sourceSentence": "If your employment is terminated by the Company for Cause, or if you resign and thereafter breach Section 5 or Section 6 of Exhibit A, the Company may repurchase all shares you acquired on exercise of the option, whether vested or unvested, at the lower of the original exercise price or the then current fair market value.",
+      "expectedSeverity": "high",
+      "meaning": "If you are fired for Cause, or resign and then breach the non-compete or IP sections, the Company can buy back every share you bought, vested or not, at the lower of what you paid and what it is worth.",
+      "counterOffer": "The Company's repurchase right applies only to unvested shares and terminates as to each share upon its vesting, and any repurchase shall be at the greater of the original exercise price or the then current fair market value.",
+      "escapability": {
+        "repaymentTrigger": "termination by the Company for Cause, or resignation followed by breach of Section 5 or Section 6",
+        "repaymentWindow": "not stated in the sentence",
+        "vestedEquityRepurchasable": "yes, whether vested or unvested",
+        "repurchasePrice": "the lower of the original exercise price or the then current fair market value"
+      }
+    }
+  ],
+  "decoySentences": [
+    "The Company will reimburse you for reasonable business expenses incurred in the performance of your duties, provided that any single expense over $18.00 must receive written pre-approval from the Controller.",
+    "Employees are required to wear closed-toe footwear in all Company offices at all times, including on days designated by the Company as casual days.",
+    "You will accrue paid time off at the rate of fifteen (15) days per year, accruing ratably each pay period, subject to a maximum accrual cap of twenty-two (22) days.",
+    "If any provision of this Agreement is held to be invalid or unenforceable, that provision shall be modified to the minimum extent necessary to make it enforceable, and the remaining provisions shall continue in full force and effect."
+  ],
+  "clauseTypesChecked": [
+    "non-compete",
+    "arbitration",
+    "ip-assignment",
+    "equity-clawback"
+  ]
+}

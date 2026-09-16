@@ -1,0 +1,108 @@
+MERIDIAN DATA SYSTEMS, INC.
+1400 Commerce Street, Suite 900
+Dallas, Texas 75201
+
+March 4, 2026
+
+Ms. Priya Raman
+1129 Fell Street, Apartment 4
+San Francisco, California 94117
+
+Re: Offer of Employment and Attached Employee Agreement
+
+Dear Ms. Raman:
+
+Meridian Data Systems, Inc. (the "Company") is pleased to offer you employment in the position of Senior Software Engineer, reporting to the Vice President of Engineering or such other person as the Company may designate from time to time. This letter, together with the Employee Agreement attached as Exhibit A (collectively, this "Agreement"), sets forth the terms of your employment with the Company.
+
+1. POSITION AND START DATE
+
+1.1. Your anticipated start date is April 13, 2026, subject to satisfactory completion of the Company's background verification process.
+
+1.2. You will be employed on a full-time basis and will devote your full business time, attention, and energies to the business of the Company.
+
+1.3. Your employment with the Company is at will, meaning that either you or the Company may terminate the employment relationship at any time, with or without cause and with or without notice.
+
+2. COMPENSATION AND BENEFITS
+
+2.1. Your annual base salary will be $187,000, payable semi-monthly in accordance with the Company's standard payroll practices and subject to all applicable withholdings.
+
+2.2. You will be eligible to participate in the Company's group medical, dental, and vision plans on the first day of the calendar month following your start date, and in the Company's 401(k) plan in accordance with its terms.
+
+2.3. You will accrue paid time off at the rate of fifteen (15) days per year, accruing ratably each pay period, subject to a maximum accrual cap of twenty-two (22) days.
+
+3. SIGNING BONUS AND EQUITY
+
+3.1. The Company will pay you a signing bonus of $40,000, less applicable withholdings, within thirty (30) days of your start date.
+
+3.2. If your employment terminates for any reason, whether voluntary or involuntary, before the completion of twenty-four (24) months of continuous service, you agree to repay to the Company the full gross amount of the $40,000 signing bonus within thirty (30) days of your last day of employment.
+
+3.3. Subject to approval by the Board of Directors, you will be granted an option to purchase 24,000 shares of the Company's common stock, vesting over four (4) years with a one (1) year cliff.
+
+3.4. If your employment is terminated by the Company for Cause, or if you resign and thereafter breach Section 5 or Section 6 of Exhibit A, the Company may repurchase all shares you acquired on exercise of the option, whether vested or unvested, at the lower of the original exercise price or the then current fair market value.
+
+4. EXPENSES AND WORKPLACE POLICIES
+
+4.1. The Company will reimburse you for reasonable business expenses incurred in the performance of your duties, provided that any single expense over $18.00 must receive written pre-approval from the Controller.
+
+4.2. Employees are required to wear closed-toe footwear in all Company offices at all times, including on days designated by the Company as casual days.
+
+4.3. You agree to comply with the Company's Employee Handbook, as amended from time to time, which does not form part of this Agreement and creates no contractual rights.
+
+EXHIBIT A: EMPLOYEE AGREEMENT
+
+5. RESTRICTIVE COVENANTS
+
+5.1. For purposes of this Section 5, "Competitive Business" means any business that develops, markets, sells, or provides data integration, data warehousing, analytics, or business intelligence software or services, and "Restricted Territory" means the United States and Canada.
+
+5.2. For a period of eighteen (18) months following the termination of your employment for any reason, you shall not, directly or indirectly, own, manage, operate, join, control, be employed by, consult for, or participate in any manner in the ownership, management, operation, or control of any Competitive Business anywhere in the Restricted Territory.
+
+5.3. For a period of eighteen (18) months following the termination of your employment, you shall not solicit, recruit, or induce any employee, contractor, customer, or prospective customer of the Company to terminate or reduce their relationship with the Company.
+
+5.4. You acknowledge that the restrictions in Section 5.2 and Section 5.3 are reasonable and necessary to protect the legitimate business interests of the Company, and that a breach would cause irreparable harm for which monetary damages would be an inadequate remedy.
+
+6. INTELLECTUAL PROPERTY AND OUTSIDE ACTIVITIES
+
+6.1. You hereby assign to the Company your entire right, title, and interest in any invention, work of authorship, discovery, improvement, design, or computer program that you conceive, develop, or reduce to practice during the term of your employment, whether or not conceived during working hours and whether or not developed using Company equipment or facilities.
+
+6.2. During your employment, you shall not engage in any outside employment, consulting, advisory, or independent development activity of any kind, whether or not compensated and whether or not related to the business of the Company.
+
+6.3. You agree to execute all documents and take all actions the Company deems necessary to perfect, record, and enforce the rights assigned under Section 6.1, including after the termination of your employment.
+
+6.4. You agree to hold in confidence and not to disclose any Confidential Information of the Company, and to return all Company property, including documents, devices, and electronic records, on or before your last day of employment.
+
+7. DISPUTE RESOLUTION
+
+7.1. You and the Company agree that any and all claims, disputes, or controversies arising out of or relating to your employment, the termination of your employment, or this Agreement, including claims of discrimination, harassment, retaliation, wrongful termination, and claims for unpaid wages, shall be resolved exclusively by final and binding arbitration administered in Dallas County, Texas.
+
+7.2. You waive any right to bring, join, or participate in any class action, collective action, or representative action in any forum, and the arbitrator shall have no authority to hear any claim on a class or collective basis.
+
+7.3. The fees and costs of the arbitrator and of the administering organization shall be borne equally by you and the Company, and each party shall bear its own attorney fees regardless of outcome.
+
+7.4. Nothing in this Section 7 shall prevent either party from seeking injunctive relief in a court of competent jurisdiction to enforce Section 5 or Section 6.
+
+8. GENERAL PROVISIONS
+
+8.1. This Agreement shall be governed by and construed in accordance with the laws of the State of Texas, without regard to its conflict of laws principles.
+
+8.2. This Agreement constitutes the entire agreement between the parties with respect to its subject matter and supersedes all prior discussions, offers, and representations, whether written or oral.
+
+8.3. If any provision of this Agreement is held to be invalid or unenforceable, that provision shall be modified to the minimum extent necessary to make it enforceable, and the remaining provisions shall continue in full force and effect.
+
+8.4. Notices under this Agreement shall be delivered in writing to the addresses set forth above, or to such other address as a party may designate by written notice, and may be sent by any method that provides proof of delivery (e.g. certified mail or a nationally recognized courier service).
+
+8.5. Your obligations under Section 5, Section 6, and Section 7 shall survive the termination of your employment for any reason.
+
+8.6. No amendment or waiver of any provision of this Agreement shall be effective unless made in writing and signed by an officer of the Company.
+
+Please indicate your acceptance of this offer by signing below and returning this Agreement to the undersigned on or before March 11, 2026.
+
+Sincerely,
+
+Daniel Okonjo
+Vice President, People Operations
+Meridian Data Systems, Inc.
+
+ACCEPTED AND AGREED:
+
+_______________________________     Date: _______________
+Priya Raman

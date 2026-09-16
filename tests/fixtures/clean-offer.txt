@@ -1,0 +1,86 @@
+HARBORLIGHT SOFTWARE, INC.
+88 Spear Street, Floor 6
+San Francisco, California 94105
+
+March 4, 2026
+
+Mr. Tomas Ferreira
+742 Alcatraz Avenue
+Oakland, California 94609
+
+Re: Offer of Employment
+
+Dear Mr. Ferreira:
+
+Harborlight Software, Inc. (the "Company") is pleased to offer you employment in the position of Senior Software Engineer, reporting to the Director of Engineering. The terms of the offer are set out below.
+
+1. POSITION AND START DATE
+
+1.1. Your start date will be April 13, 2026, or such other date as you and the Company agree in writing.
+
+1.2. You will work from the Company's San Francisco office, with remote work available in accordance with the Company's published flexible work policy.
+
+1.3. Your employment with the Company is at will, meaning that either you or the Company may end the employment relationship at any time, with or without cause and with or without notice.
+
+2. COMPENSATION AND BENEFITS
+
+2.1. Your annual base salary will be $192,000, payable semi-monthly in accordance with the Company's standard payroll practices and subject to applicable withholdings.
+
+2.2. You will be eligible for an annual discretionary performance bonus with a target of ten percent (10%) of your base salary, determined by the Company in good faith.
+
+2.3. You will be eligible to participate in the Company's medical, dental, and vision plans on your first day of employment, and in the Company's 401(k) plan with a Company match of up to four percent (4%) of eligible compensation.
+
+2.4. You will accrue paid time off at the rate of twenty (20) days per year, in addition to Company holidays and the Company's paid parental leave benefit.
+
+2.5. The Company will reimburse you for reasonable business expenses incurred in the performance of your duties, in accordance with the Company's expense policy.
+
+3. EQUITY
+
+3.1. Subject to approval by the Board of Directors, you will be granted an option to purchase 18,000 shares of the Company's common stock at the fair market value determined by the Board on the date of grant.
+
+3.2. The option will vest over four (4) years, with twenty-five percent (25%) vesting on the first anniversary of your vesting commencement date and the remainder vesting in equal monthly installments over the following thirty-six (36) months, in each case subject to your continued service.
+
+3.3. Once an option share has vested it remains vested, and the Company has no right to repurchase, cancel, or claw back any vested share or any vested portion of your equity on termination of your employment.
+
+3.4. You will have three (3) months following the end of your employment to exercise any vested portion of the option, in accordance with the terms of the Company's equity incentive plan.
+
+4. CONFIDENTIALITY
+
+4.1. During and after your employment, you agree to hold in confidence and not to disclose the Company's Confidential Information, meaning non-public technical, product, customer, and financial information of the Company that is disclosed to you or developed by you in the course of your work.
+
+4.2. Confidential Information does not include information that is or becomes publicly available through no fault of your own, that you lawfully knew before the Company disclosed it to you, or that you lawfully obtain from a third party without a duty of confidence.
+
+4.3. Nothing in this letter limits your right to discuss your wages, hours, or working conditions with others, or to report a possible violation of law to a government agency (e.g. the Equal Employment Opportunity Commission or the National Labor Relations Board).
+
+5. INTELLECTUAL PROPERTY
+
+5.1. You assign to the Company only those inventions and works of authorship that you create within the scope of your employment, using Company time, equipment, or Confidential Information, and that relate to the business of the Company.
+
+5.2. This Section 5 does not apply to any invention that you develop entirely on your own time without using the Company's equipment, supplies, facilities, or Confidential Information, except for inventions that relate to the Company's business or that result from work performed by you for the Company.
+
+5.3. You may list on the attached Schedule A any invention made before your employment that you wish to exclude from Section 5.1, and any invention so listed is excluded.
+
+5.4. You are free to work on personal projects and open source software outside of working hours, and the Company makes no claim to that work where Section 5.1 does not apply to it.
+
+6. OTHER TERMS
+
+6.1. This offer is contingent on your completing the Form I-9 employment eligibility verification within three (3) business days of your start date.
+
+6.2. You will be expected to comply with the Company's Employee Handbook, which is a statement of Company policy and does not create a contract of employment.
+
+6.3. This letter contains the complete terms of the Company's offer and supersedes any prior discussions or representations about your employment.
+
+6.4. This letter shall be governed by the laws of the State of California.
+
+Please indicate your acceptance by signing below and returning this letter on or before March 18, 2026. We are glad you are considering joining us.
+
+Sincerely,
+
+Renata Osei
+Head of People
+Harborlight Software, Inc.
+
+ACCEPTED AND AGREED:
+
+_______________________________     Date: _______________
+Tomas Ferreira
