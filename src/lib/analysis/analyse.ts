@@ -93,8 +93,14 @@ export interface AnalyseOptions {
  * that produced it. The parser is a pure function of the text, so the document
  * that comes out is the one the reader confirmed on screen — re-deriving it is
  * what keeps every span an index into the text the reader is looking at.
+ *
+ * Exported because the question box needs the same document this pipeline
+ * needs, for the same reason. Two copies of this would be two chances for a
+ * span to mean something different on one screen than on the other.
  */
-async function reread(text: string): Promise<ParsedDocument | null> {
+export async function rereadDocument(
+  text: string,
+): Promise<ParsedDocument | null> {
   const bytes = new TextEncoder().encode(text);
   const result = await parseDocument(
     bytes.buffer.slice(0) as ArrayBuffer,
@@ -108,7 +114,7 @@ export async function analyse(
   model: ModelClient,
   options: AnalyseOptions = {},
 ): Promise<AnalysisOutcome> {
-  const document = await reread(request.text);
+  const document = await rereadDocument(request.text);
   if (!document) {
     return { ok: false, failure: { kind: "unreadable-document" } };
   }

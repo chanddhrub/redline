@@ -1,6 +1,6 @@
 # 06: The question box
 
-Status: ready-for-agent
+Status: done 2026-09-16
 
 **What to build:** A job seeker asks a question about their document and gets an
 answer drawn from the document alone, showing the sentences it rests on. Where
@@ -18,17 +18,17 @@ softened.
 
 **Blocked by:** 01, 02, 04.
 
-- [ ] A question is answered from the document only, with the sentences it rests
+- [x] A question is answered from the document only, with the sentences it rests
       on shown verbatim
-- [ ] A question the document is silent on returns "not addressed", in plain
+- [x] A question the document is silent on returns "not addressed", in plain
       words, as product copy
-- [ ] An answer whose citations do not locate becomes "not addressed", even when
+- [x] An answer whose citations do not locate becomes "not addressed", even when
       the model returned a confident answer
-- [ ] Adversarial questions whose answers are genuinely absent ("is this
+- [x] Adversarial questions whose answers are genuinely absent ("is this
       enforceable in Texas?", "is this salary competitive?", "what happens if I
       quit in month three?") are refused, asserted in tests against both fixtures
-- [ ] The answer's register is visually distinct from the cited sentences
-- [ ] A server route carries the question and the request as JSON; no route
+- [x] The answer's register is visually distinct from the cited sentences
+- [x] A server route carries the question and the request as JSON; no route
       accepts a file
-- [ ] The box sits as a peer of the finding stack, not a modal
-- [ ] All copy has been through the humanizer skill
+- [x] The box sits as a peer of the finding stack, not a modal
+- [x] All copy has been through the humanizer skill

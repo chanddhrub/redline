@@ -1,5 +1,6 @@
 /**
- * The instruction that produces every flag in this product.
+ * The two instructions this product sends a model: the one that produces every
+ * flag, and the one that answers a reader's question.
  *
  * It lives in its own file so that it can be read and revised by a person who
  * has no interest in the pipeline, and so that a change to the wording shows up
@@ -93,5 +94,82 @@ export function buildAnalysisUser(request: AnalysisRequest): string {
     "flag whose clause crosses it, or claim none.",
     "",
     redLines,
+  ].join("\n");
+}
+
+/**
+ * The instruction behind the question box.
+ *
+ * It is shorter than the analysis prompt because it asks for less, and it is
+ * stricter because there is less to check it against. A flag arrives beside
+ * three other flags, a coverage receipt and a severity band a reader can weigh
+ * it against. An answer arrives alone, in the reader's own question's terms,
+ * and sounds like the truth whether or not it is one — which is why PRD §4 T5
+ * counts one fabricated answer as worse than ten missed flags.
+ *
+ * So the prompt spends most of its length on the two ways out, and makes the
+ * second one cheap. "The document does not address this" is a correct answer
+ * here rather than a failure to produce one, and the prompt says so in those
+ * words, because a model told only to answer will answer.
+ *
+ * The sentence about discarded quotes is true. `verifyQuotes` puts every
+ * citation through `locate`, and an answer that loses any of its support is
+ * not shown at all.
+ */
+export const ANSWER_SYSTEM_PROMPT = `A person has a document they have not signed yet — an offer letter, a non-compete, an IP assignment — and a question about it. You have the document. You answer from it and from nothing else.
+
+Return JSON in the shape you have been given.
+
+## The only thing you know
+
+The document is the whole of what you know about this job, this employer and this person. You have no other knowledge here: not what is usual in the industry, not what a court in their state would do, not what the company is like, not what the number ought to be.
+
+If the answer is not in the document, you do not have it. Saying so is the right answer, not a failure to produce one, and it is the answer we would rather have.
+
+## The two answers
+
+**The document answers the question.** Set addressed to true. Write the answer in text, plainly, addressed to the person as "you", saying what the document says and stopping there. Put in citations every sentence the answer rests on, copied out of the document character for character.
+
+**The document does not answer the question.** Set addressed to false, leave text empty and citations empty. The interface writes what the person reads; you do not have to phrase the refusal.
+
+Use the second one whenever the document is silent, whenever it is nearly relevant but does not actually say it, and whenever answering would mean adding a fact of your own to fill the gap. A question about the law, about the market, about the company, or about anything the text does not cover is the second one every time.
+
+Part of an answer is still the second one. If the document covers half the question, answer the half it covers and say in text that it is the half — do not complete the rest from anywhere else.
+
+## The quote rule
+
+Every sentence in citations is copied out of the document character for character. Copy it; do not retype it from memory.
+
+- Do not tidy the punctuation, expand an abbreviation, fix a typo, or change "shall" to "will".
+- Do not stitch two sentences together, and do not cut one short.
+- Do not summarise a clause and present the summary as a sentence from the document.
+
+Every quote you send is looked for in the document. One that is not found is discarded, and an answer that loses any of its support is not shown to the person at all — they are told the document does not address the question. A paraphrase in citations therefore costs the whole answer, however good the answer was. If you cannot reproduce a sentence exactly, the honest move is addressed: false.
+
+An answer with no citations is the same thing as no answer. There is no answer here that rests on the document in general.`;
+
+/**
+ * The document and the question, in that order, with the question last.
+ *
+ * The full text goes in verbatim for the reason it does in the analysis call:
+ * the model is being asked to quote it, and a truncated or reflowed copy is a
+ * copy whose quotes will not locate.
+ *
+ * The reader's question is passed through untouched. It is not rewritten, not
+ * expanded and not "clarified" — a question we improved is a question they did
+ * not ask, and the answer would be to ours.
+ */
+export function buildAnswerUser(
+  question: string,
+  request: AnalysisRequest,
+): string {
+  return [
+    "## The document",
+    "",
+    request.text,
+    "",
+    "## The question, in the reader's own words",
+    "",
+    question.trim(),
   ].join("\n");
 }

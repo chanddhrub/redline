@@ -277,6 +277,46 @@ export function parseAnalysis(value: unknown): WireAnalysis | null {
   return { summary: { claims }, flags, coverage: receipt, context, governingLaw };
 }
 
+/* ── The answer ──────────────────────────────────────────────────────── */
+
+/**
+ * The two states of an answer, as they arrive. There is no third one here for
+ * the same reason there is no third one in `answer.ts`: PRD §4 T5 counts one
+ * fabricated answer as worse than ten missed flags, and a "shown with a caveat"
+ * state is where a fabricated answer would live.
+ *
+ * `not-addressed` carries no fields. There is nothing about the reader's
+ * document to say, so there is nothing to serialise, and the copy the reader
+ * reads is written on this side.
+ */
+export type WireAnswer =
+  | { readonly kind: "answered"; readonly text: string; readonly citations: readonly WireCitation[] }
+  | { readonly kind: "not-addressed" };
+
+/**
+ * The body, checked. `null` is not "not addressed" — a body we cannot read is
+ * a failure, and reporting it as a document that does not address the question
+ * would be a claim about the reader's contract we never made.
+ */
+export function parseAnswer(value: unknown): WireAnswer | null {
+  if (!isRecord(value)) return null;
+  if (value.kind === "not-addressed") return { kind: "not-addressed" };
+  if (value.kind !== "answered") return null;
+  if (!str(value.text) || !value.text.trim()) return null;
+  if (!Array.isArray(value.citations) || value.citations.length === 0) return null;
+
+  const citations: WireCitation[] = [];
+  for (const entry of value.citations) {
+    const cited = citation(entry);
+    // One citation that does not check out fails the whole answer, the way it
+    // does server-side. Prose resting jointly on sentences we cannot place is
+    // prose we cannot stand behind.
+    if (!cited) return null;
+    citations.push(cited);
+  }
+  return { kind: "answered", text: value.text, citations };
+}
+
 /* ── Severity, in three signals ──────────────────────────────────────── */
 
 /**

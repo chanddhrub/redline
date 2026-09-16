@@ -29,13 +29,16 @@ import { paragraphs, SAMPLE_LETTER } from "@/app/_demo/sample";
 import {
   interpretFailure,
   parseAnalysis,
+  parseAnswer,
   stampCodes,
   type RunFailure,
   type WireAnalysis,
+  type WireAnswer,
   type WireSpan,
 } from "../_lib/wire";
 import { DocumentSheet } from "./sheet";
 import {
+  AnswerPanel,
   Failed,
   Result,
   Running,
@@ -54,6 +57,18 @@ type Run =
   | { kind: "running"; reason: RunReason; startedAt: number }
   | { kind: "done"; analysis: WireAnalysis }
   | { kind: "failed"; failure: RunFailure };
+
+/**
+ * Where a question has got to. The question the reader asked is carried on
+ * every state, because the box is cleared the moment it is submitted and the
+ * answer has to say what it is an answer to — including when what comes back
+ * is that the document does not address it.
+ */
+type Ask =
+  | { kind: "idle" }
+  | { kind: "asking"; question: string }
+  | { kind: "answered"; question: string; answer: WireAnswer }
+  | { kind: "failed"; question: string; failure: RunFailure };
 
 type Phase =
   | { kind: "idle" }
@@ -152,7 +167,7 @@ export function Shell() {
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [question, setQuestion] = useState("");
-  const [asked, setAsked] = useState<string | null>(null);
+  const [ask, setAsk] = useState<Ask>({ kind: "idle" });
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -162,6 +177,9 @@ export function Shell() {
    *  twice must not be shown the first run's answer because it came back
    *  second. */
   const runToken = useRef(0);
+  /** The same discipline for questions: a reader who asks twice must not be
+   *  shown the first answer because it came back second. */
+  const askToken = useRef(0);
 
   const source = phase.kind === "ready" ? phase.source : null;
   const sample = source === "sample";
@@ -176,6 +194,11 @@ export function Shell() {
     setRun({ kind: "idle" });
     setSelected(null);
     runToken.current += 1;
+    // The previous answer quoted offsets into text that is about to be
+    // replaced, so it goes with the analysis rather than hanging over the new
+    // document pointing at nothing.
+    setAsk({ kind: "idle" });
+    askToken.current += 1;
     // Reading hands the thread back as it goes, so a long contract repaints
     // its way through instead of freezing the page.
     const result = await parseDocument(bytes, filename, {
@@ -206,6 +229,8 @@ export function Shell() {
     setRun({ kind: "idle" });
     setSelected(null);
     runToken.current += 1;
+    setAsk({ kind: "idle" });
+    askToken.current += 1;
     const result = await parseDocument(
       bytes.buffer.slice(0) as ArrayBuffer,
       SAMPLE_LETTER.filename,
@@ -225,7 +250,8 @@ export function Shell() {
     setRun({ kind: "idle" });
     setSelected(null);
     runToken.current += 1;
-    setAsked(null);
+    setAsk({ kind: "idle" });
+    askToken.current += 1;
     if (fileRef.current) fileRef.current.value = "";
   }, []);
 
@@ -287,6 +313,66 @@ export function Shell() {
           ? { kind: "claim", index: 0 }
           : null,
     );
+    },
+    [],
+  );
+
+  /**
+   * One question. The route takes the same assembled request the analysis
+   * takes, plus the question, and answers with one of two states or with a
+   * failure — all three are data and all three are surfaces here.
+   *
+   * A failure is never rendered as "your document does not address this".
+   * Telling someone their contract is silent because a rate limit was hit
+   * would be a claim about their document that nobody made.
+   */
+  const askQuestion = useCallback(
+    async (text: string, state: AnalysisRequestState) => {
+      const asked = text.trim();
+      const assembled = toAnalysisRequest(state);
+      if (!asked || !assembled) return;
+
+      const token = (askToken.current += 1);
+      setAsk({ kind: "asking", question: asked });
+      setQuestion("");
+
+      let response: Response;
+      try {
+        response = await fetch("/api/answer", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ...assembled, question: asked }),
+        });
+      } catch {
+        if (token === askToken.current) {
+          setAsk({ kind: "failed", question: asked, failure: { kind: "no-connection" } });
+        }
+        return;
+      }
+
+      const body: unknown = await response.json().catch(() => null);
+      if (token !== askToken.current) return;
+
+      if (!response.ok) {
+        setAsk({
+          kind: "failed",
+          question: asked,
+          failure: interpretFailure(response.status, body),
+        });
+        return;
+      }
+
+      const answer = parseAnswer(body);
+      if (!answer) {
+        setAsk({ kind: "failed", question: asked, failure: { kind: "unusable" } });
+        return;
+      }
+
+      setAsk({ kind: "answered", question: asked, answer });
+      // The window lands on the first sentence the answer rests on, the way it
+      // lands on the top-ranked flag. On a refusal there is nothing to point
+      // at, so the crop is left where the reader had it.
+      if (answer.kind === "answered") setSelected({ kind: "answer", index: 0 });
     },
     [],
   );
@@ -381,7 +467,16 @@ export function Shell() {
    * an offset into the very text rendered in the sheet.
    */
   const crop = useMemo((): { span: WireSpan; stamp: string } | null => {
-    if (!analysis || !selected) return null;
+    if (!selected) return null;
+    // An answer is a peer of the analysis, not part of it: a reader can ask a
+    // question before they run one, so this branch comes first and does not
+    // depend on there being a result.
+    if (selected.kind === "answer") {
+      if (ask.kind !== "answered" || ask.answer.kind !== "answered") return null;
+      const citation = ask.answer.citations[selected.index];
+      return citation ? { span: citation.span, stamp: "Answer" } : null;
+    }
+    if (!analysis) return null;
     if (selected.kind === "flag") {
       const index = analysis.flags.findIndex((r) => r.flag.id === selected.id);
       if (index === -1) return null;
@@ -397,7 +492,7 @@ export function Shell() {
     return analysis.governingLaw
       ? { span: analysis.governingLaw.span, stamp: "Governing law" }
       : null;
-  }, [analysis, selected]);
+  }, [analysis, ask, selected]);
 
   return (
     <div className="min-h-screen bg-ink text-paper lg:flex">
@@ -534,8 +629,10 @@ export function Shell() {
             enabled={phase.kind === "ready"}
             value={question}
             setValue={setQuestion}
-            asked={asked}
-            onAsk={() => setAsked(question)}
+            ask={ask}
+            onAsk={(text) => void askQuestion(text, request)}
+            selected={selected}
+            onSelect={setSelected}
           />
 
           <RedLines
@@ -881,31 +978,61 @@ function Jurisdiction({
 
 /* ── Question box ────────────────────────────────────────────────────── */
 
+/**
+ * The question box. A peer of the finding stack, in the same column as it, not
+ * a modal and not a corner of the document pane.
+ *
+ * It sits here rather than at the foot of the document for three reasons. The
+ * document pane is the fixed thing on the screen and the window that travels
+ * inside it is the product's primary mechanic; a text field and a three-state
+ * answer growing under it would push the cropped sentence below reading size,
+ * which the shell brief rules out. A citation in an answer recrops that window,
+ * and a control that moves the window cannot live inside the window without
+ * scrolling out from under the reader as they use it. And every other control
+ * that recrops — a flag, a summary claim, the governing-law sentence — is in
+ * this column already, so the box keeps company with its peers rather than
+ * becoming the one exception.
+ *
+ * It is available as soon as a document is read. The analysis is not a
+ * prerequisite: someone with a deadline may well want one sentence out of the
+ * contract before they want a reading of the whole thing.
+ */
 function QuestionBox({
   enabled,
   value,
   setValue,
-  asked,
+  ask,
   onAsk,
+  selected,
+  onSelect,
 }: {
   enabled: boolean;
   value: string;
   setValue: (v: string) => void;
-  asked: string | null;
-  onAsk: () => void;
+  ask: Ask;
+  onAsk: (text: string) => void;
+  selected: Selection;
+  onSelect: (selection: Selection) => void;
 }) {
   return (
     <>
       <SectionHead
         id="questions"
         title="Ask about your document"
-        note="Answered only from the text you gave it"
+        note="Answered from the sentences in your document"
       />
       <div className="px-4 py-4 sm:px-6">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+          Ask anything the text beside this could settle. Where your document
+          says it, the answer comes back with the sentence it came from. Where
+          your document is silent, you are told that.
+        </p>
+
         <form
+          className="mt-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (value.trim()) onAsk();
+            if (value.trim()) onAsk(value);
           }}
         >
           <label htmlFor="q" className="sr-only">
@@ -923,29 +1050,54 @@ function QuestionBox({
           />
           <button
             type="submit"
-            disabled={!enabled || !value.trim()}
+            disabled={!enabled || !value.trim() || ask.kind === "asking"}
             className="slug label slug-on-ink mt-3 disabled:cursor-not-allowed disabled:border-paper/30 disabled:bg-transparent disabled:text-paper/45"
           >
-            <span>Ask</span>
+            <span>{ask.kind === "asking" ? "Reading" : "Ask"}</span>
           </button>
         </form>
 
-        {asked ? (
-          <div className="mt-4 border-2 border-spot">
-            <p className="label border-b-2 border-spot px-3 py-1.5 text-spot">
-              Your question
+        {ask.kind === "asking" ? (
+          <div className="mt-4 border-2 border-spot" role="status" aria-live="polite">
+            <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
+              Looking through your document
             </p>
-            <p className="px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper">
-              {asked}
-            </p>
-            <p className="label border-t-2 border-spot px-3 py-1.5 text-spot">
-              No answer yet
-            </p>
-            <p className="px-3 py-2 font-voice text-sm leading-relaxed text-paper/80">
-              The question box is not wired to anything yet. When it is, it will
-              answer from your document alone and say so plainly when the text
-              does not answer you, rather than reaching for general knowledge.
-            </p>
+            <div className="space-y-3 px-3 py-3">
+              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+                &ldquo;{ask.question}&rdquo;
+              </p>
+              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+                Nothing reaches this panel until the sentences behind it have
+                been found in the copy you are looking at.
+              </p>
+              <div className="h-[3px] w-full overflow-hidden bg-spot/25" aria-hidden="true">
+                <span className="sweep block h-full w-1/3 bg-spot" />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {ask.kind === "answered" ? (
+          <div className="mt-4">
+            <AnswerPanel
+              question={ask.question}
+              answer={ask.answer}
+              selected={selected}
+              onSelect={onSelect}
+            />
+          </div>
+        ) : null}
+
+        {ask.kind === "failed" ? (
+          <div className="mt-4">
+            {/* The box is cleared on submit, so the retry carries the question
+                the reader actually asked rather than whatever is in the field
+                now — which is usually nothing. */}
+            <Failed
+              failure={ask.failure}
+              onRetry={() => onAsk(ask.question)}
+              heading="No answer"
+            />
           </div>
         ) : null}
       </div>

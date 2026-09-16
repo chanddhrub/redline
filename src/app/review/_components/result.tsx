@@ -29,6 +29,7 @@ import {
   SEVERITY_WORD,
   type RunFailure,
   type WireAnalysis,
+  type WireAnswer,
   type WireCitation,
   type WireGeneralStatement,
   type WireRankedFlag,
@@ -38,6 +39,10 @@ export type Selection =
   | { kind: "flag"; id: string }
   | { kind: "claim"; index: number }
   | { kind: "governing-law" }
+  /** A sentence an answer rests on. Selectable exactly as a flag is, and it
+   *  drives the same travelling window (`shell.tsx`), because it is the same
+   *  kind of thing: a located sentence in the reader's own text. */
+  | { kind: "answer"; index: number }
   | null;
 
 /* ── Shared material ─────────────────────────────────────────────────── */
@@ -502,15 +507,19 @@ function failureCopy(failure: RunFailure): FailureCopy {
 export function Failed({
   failure,
   onRetry,
+  heading = "No analysis",
 }: {
   failure: RunFailure;
   onRetry: () => void;
+  /** What did not happen. The question box borrows this surface, and "no
+   *  analysis" over a failed question would name the wrong thing. */
+  heading?: string;
 }) {
   const copy = failureCopy(failure);
   return (
     <div className="border-2 border-spot" role="alert">
       <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
-        No analysis
+        {heading}
       </p>
       <div className="space-y-3 px-4 py-4">
         <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
@@ -528,6 +537,126 @@ export function Failed({
           </button>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/* ── The answer ──────────────────────────────────────────────────────── */
+
+/**
+ * The standing holding, not a failure to answer.
+ *
+ * This surface is the whole point of the question box, so it is written as
+ * product copy and given the same weight as an answer: the same header strip,
+ * the same measure, the same voice. A reader who has just been told their
+ * document is silent has learned something about their contract, and a
+ * shrinking apology would teach them to distrust the refusal and go looking
+ * for a tool that always answers (PRD §4 T5, ADR 0004).
+ */
+function NotAddressed() {
+  return (
+    <>
+      <p className="label border-y-2 border-spot bg-spot px-3 py-2 text-ink">
+        Your document does not address this
+      </p>
+      <div className="space-y-3 px-3 py-3">
+        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+          Nothing in the text beside this speaks to that question, so there is
+          no answer to give you.
+        </p>
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/85">
+          Redline answers from your document and from nothing else. Something
+          that sounds right is easy to write, and you would have no way to tell
+          it apart from an answer that really was in your contract, so this box
+          does not write it.
+        </p>
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+          Questions about the law where you work, about what is usual in the
+          market, or about the company itself all land here. They need someone
+          who can look outside this file. Ask about something your document
+          sets out and you will get the sentence it came from.
+        </p>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The answer, in two states and no more.
+ *
+ * The registers are the same two that run through the rest of this file, and
+ * they are further apart here than anywhere else, because an answer is the one
+ * place where Redline's words are shaped by the reader's own question and could
+ * most easily be mistaken for the contract's. So the answer is Archivo on ink,
+ * under a header that says whose words these are, and every sentence it rests
+ * on is Tinos on cream inside a bordered panel. Nothing on the cream is ours.
+ *
+ * Each cited sentence is a button, and selecting one recrops the document the
+ * way selecting a flag does. The answer is checked the way a flag is checked.
+ */
+export function AnswerPanel({
+  question,
+  answer,
+  selected,
+  onSelect,
+}: {
+  question: string;
+  answer: WireAnswer;
+  selected: Selection;
+  onSelect: (selection: Selection) => void;
+}) {
+  return (
+    <div className="border-2 border-spot" aria-live="polite">
+      <p className="label border-b-2 border-spot px-3 py-1.5 text-spot">
+        You asked
+      </p>
+      <p className="px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper">
+        {question}
+      </p>
+
+      {answer.kind === "not-addressed" ? <NotAddressed /> : null}
+
+      {answer.kind === "answered" ? (
+        <>
+          <p className="label border-y-2 border-spot bg-spot px-3 py-2 text-ink">
+            Answered from your document
+          </p>
+          <p className="max-w-[62ch] px-3 py-3 font-voice text-[1.0625rem] leading-relaxed text-paper">
+            {answer.text}
+          </p>
+
+          <p className="label border-t-2 border-spot px-3 py-1.5 text-spot">
+            {answer.citations.length === 1
+              ? "The sentence this rests on"
+              : "The sentences this rests on"}
+          </p>
+          <ul className="space-y-2 px-3 pb-3">
+            {answer.citations.map((citation, index) => {
+              const active = selected?.kind === "answer" && selected.index === index;
+              return (
+                <li key={index}>
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onSelect({ kind: "answer", index })}
+                    className="block w-full text-left"
+                  >
+                    <CitedPanel
+                      citation={citation}
+                      header={active ? "Shown in the document" : "From your document"}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="label border-t-2 border-spot px-3 py-2 leading-relaxed text-paper/65">
+            Each sentence above was found in your stored text before the answer
+            was shown. One that could not be found would have taken the answer
+            with it.
+          </p>
+        </>
+      ) : null}
     </div>
   );
 }

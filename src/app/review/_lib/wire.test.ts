@@ -17,12 +17,14 @@ import { parseDocument } from "../../../lib/intake/parse-document";
 import { createStubModelClient, loadFixture } from "../../../lib/model/stub";
 import type { FixtureName } from "../../../lib/model/stub";
 import { analyse } from "../../../lib/analysis/analyse";
+import { answer } from "../../../lib/analysis/answer";
 import type { RedLine } from "../../../lib/intake/analysis-request";
 import {
   factorLabel,
   headline,
   interpretFailure,
   parseAnalysis,
+  parseAnswer,
   remainder,
   stampCodes,
   SEVERITY_BAR_PX,
@@ -279,5 +281,101 @@ describe("what the row and the measures table say", () => {
       "Survives Termination Without Cause",
     );
     expect(factorLabel("class_action_waiver")).toBe("Class action waiver");
+  });
+});
+
+/* ── The answer over the wire ────────────────────────────────────────── */
+
+/** The answer route's body, short of the HTTP, for a real question. */
+async function answerBodyFor(
+  name: FixtureName,
+  question: string,
+): Promise<unknown> {
+  const fixture = loadFixture(name);
+  const bytes = new TextEncoder().encode(fixture.text);
+  const parsed = await parseDocument(
+    bytes.buffer.slice(0) as ArrayBuffer,
+    `${name}.txt`,
+  );
+  if (!parsed.ok) throw new Error(`fixture ${name} did not parse`);
+
+  const outcome = await answer(
+    question,
+    {
+      text: parsed.document.text,
+      sentences: parsed.document.sentences,
+      jurisdiction: "California",
+      redLines: [],
+    },
+    createStubModelClient({ fixture: name }),
+  );
+  if (!outcome.ok) throw new Error(`answering failed`);
+
+  // Exactly what `src/app/api/answer/route.ts` puts on the wire, through the
+  // same round trip `Response.json` and `fetch` make it take.
+  const wire =
+    outcome.answer.kind === "answered"
+      ? {
+          kind: "answered" as const,
+          text: outcome.answer.text,
+          citations: outcome.answer.citations.map((citation) => ({
+            text: citation.text,
+            span: citation.span,
+          })),
+        }
+      : { kind: "not-addressed" as const };
+  return JSON.parse(JSON.stringify(wire));
+}
+
+describe("the answer, over the wire", () => {
+  it("reads an answer back with citations that still locate", async () => {
+    const body = await answerBodyFor(
+      "adhesion-contract",
+      "Can the company claw back shares that have already vested?",
+    );
+    const parsed = parseAnswer(body);
+    expect(parsed).not.toBeNull();
+    if (!parsed || parsed.kind !== "answered") throw new Error("expected an answer");
+
+    const fixture = loadFixture("adhesion-contract");
+    expect(parsed.citations.length).toBeGreaterThan(0);
+    for (const citation of parsed.citations) {
+      // The span and the sentence still agree after the trip, so the window
+      // crops the words being quoted rather than somewhere near them.
+      expect(citation.span.end - citation.span.start).toBe(citation.text.length);
+      expect(fixture.text).toContain(citation.text);
+    }
+  });
+
+  it("reads a refusal back as a refusal carrying nothing", async () => {
+    const body = await answerBodyFor("adhesion-contract", "What is the severance?");
+    expect(body).toEqual({ kind: "not-addressed" });
+    expect(parseAnswer(body)).toEqual({ kind: "not-addressed" });
+  });
+
+  it("refuses an answered body whose citations did not survive the trip", () => {
+    // A span and a sentence that disagree crop somewhere other than the words
+    // quoted. The whole answer is refused rather than shown pointing askew.
+    expect(
+      parseAnswer({
+        kind: "answered",
+        text: "Eighteen months.",
+        citations: [{ text: "For a period of eighteen (18) months", span: { start: 0, end: 4 } }],
+      }),
+    ).toBeNull();
+  });
+
+  it("refuses an answered body with nothing under it", () => {
+    expect(parseAnswer({ kind: "answered", text: "Yes.", citations: [] })).toBeNull();
+    expect(parseAnswer({ kind: "answered", text: "   ", citations: [] })).toBeNull();
+  });
+
+  it("does not read an unreadable body as a document that says nothing", () => {
+    // `null` sends the reader to the failure surface. Reporting a body we
+    // cannot read as "your document does not address this" would be a claim
+    // about their contract that nobody made.
+    expect(parseAnswer(null)).toBeNull();
+    expect(parseAnswer({ kind: "maybe" })).toBeNull();
+    expect(parseAnswer({ error: "boom" })).toBeNull();
   });
 });
