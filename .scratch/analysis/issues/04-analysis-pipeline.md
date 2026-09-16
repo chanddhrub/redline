@@ -1,6 +1,6 @@
 # 04: The analysis pipeline
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** The one function that takes an `AnalysisRequest` and returns
 an `Analysis`, plus the server route that exposes it. This is where the summary,
@@ -29,23 +29,23 @@ the absence of the route is the enforcement.
 
 **Blocked by:** 01, 02, 03, and intake 08 (`toAnalysisRequest`).
 
-- [ ] `analyse` takes an `AnalysisRequest` and a `ModelClient` and returns a
+- [x] `analyse` takes an `AnalysisRequest` and a `ModelClient` and returns a
       summary, ranked flags, a coverage receipt, drops, and the governing-law
       citation where the document has one
-- [ ] Every flag carries its verbatim source sentence, a severity, a plain
+- [x] Every flag carries its verbatim source sentence, a severity, a plain
       statement of what it means, and a counter-offer written against that
       sentence
-- [ ] The summary makes no claim the text does not support, and any sentence it
+- [x] The summary makes no claim the text does not support, and any sentence it
       quotes goes through the gate
-- [ ] The coverage receipt returns on every analysis, naming all four clause
+- [x] The coverage receipt returns on every analysis, naming all four clause
       types, the finding for each, and what was not reviewed
-- [ ] The clean fixture returns zero flags and a full receipt — not an empty
+- [x] The clean fixture returns zero flags and a full receipt — not an empty
       result, not an invented low-severity flag
-- [ ] The planted fixture returns the planted clauses at their expected severity
+- [x] The planted fixture returns the planted clauses at their expected severity
       bands, and never a decoy sentence
-- [ ] The two registers are carried in the data, not only in the prose: what the
+- [x] The two registers are carried in the data, not only in the prose: what the
       text says is separable from what a court or employer might do
-- [ ] A server route accepts the request as JSON and returns the analysis; no
+- [x] A server route accepts the request as JSON and returns the analysis; no
       route anywhere accepts a file
-- [ ] The whole pipeline is tested against both fixtures through the stub client
-- [ ] Standing check: no flag in any pipeline output lacks a located span
+- [x] The whole pipeline is tested against both fixtures through the stub client
+- [x] Standing check: no flag in any pipeline output lacks a located span

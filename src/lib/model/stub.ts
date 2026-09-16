@@ -232,42 +232,34 @@ function buildAnalysis(
       : null,
   }));
 
-  const citationSource = sidecar.expectedFlags.length
-    ? sidecar.expectedFlags.map((flag) => flag.sourceSentence)
-    : sidecar.decoySentences;
+  // Both halves are drawn from the sidecar: a planted document summarises
+  // through the clauses it planted, and a clean one through the harmless
+  // sentences it lists, which are in its text and therefore locate.
+  const claimSource = sidecar.expectedFlags.length
+    ? sidecar.expectedFlags
+        .slice(0, 2)
+        .map((flag) => ({ claim: flag.meaning, sentence: flag.sourceSentence }))
+    : sidecar.decoySentences
+        .slice(0, 1)
+        .map((sentence) => ({ claim: sidecar.description, sentence }));
 
   const payload = {
     summary: {
-      text: sidecar.description,
-      citations: citationSource
-        .slice(0, 2)
-        .map((sentence, index) =>
-          corruptQuote(sentence, index, foreign, corruptions),
-        ),
+      claims: claimSource.map(({ claim, sentence }, index) => ({
+        claim,
+        sourceSentence: corruptQuote(sentence, index, foreign, corruptions),
+      })),
     },
     candidates,
     governingLawSentence: sidecar.governingLaw
       ? corruptQuote(sidecar.governingLaw, 0, foreign, corruptions)
       : null,
-    coverage: sidecar.clauseTypesChecked.map((clauseType) => ({
-      clauseType,
-      finding: finding(sidecar, clauseType),
-    })),
   };
 
   if (corruptions.has("off-schema")) {
     return { ...payload, candidates: "none" };
   }
   return payload;
-}
-
-function finding(sidecar: Sidecar, clauseType: ClauseType): string {
-  const count = sidecar.expectedFlags.filter(
-    (flag) => flag.clauseType === clauseType,
-  ).length;
-  return count === 0
-    ? "checked; nothing found that qualifies"
-    : `checked; ${count} clause${count === 1 ? "" : "s"} found`;
 }
 
 function buildAnswer(

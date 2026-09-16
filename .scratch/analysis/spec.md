@@ -161,6 +161,11 @@ verifyFlags(candidates: CandidateFlag[], document: ParsedDocument): {
   what makes PRD §4's T1 a standing check rather than a review item.
 - The same gate runs over the summary and over question answers: any sentence
   either of them claims to quote is located, or the claim is dropped.
+  The summary is therefore a list of claims, each paired with its own supporting
+  sentence, rather than a paragraph beside a loose list of quotes. Corrected
+  2026-09-15: with a paragraph, a quote that fails to locate leaves its claim
+  standing and unsupported, and the only choices left are dropping the whole
+  summary or showing an unanchored sentence.
 
 ### Seam 3 — ranking and promotion
 
@@ -199,6 +204,12 @@ interface Analysis {
   clause types from ADR 0003, the finding for each, and a plain statement of
   what was not reviewed. Never an empty result, never a manufactured
   low-severity finding (ADR 0004).
+  **The receipt is derived from the flags that survived the gate, not written by
+  the model.** Corrected 2026-09-15 while ticket 04 was built: a model-written
+  finding is an uncited claim about the document, and it can print "nothing
+  found" directly above a flag of that type. The receipt is the one part of a
+  clean result that has to be trustworthy, so it is computed rather than asked
+  for.
 - `enforceability` is a separate array keyed to the user's state, each note
   labelled and carrying no span, because it does not come from the document. It
   is joined to a flag by clause type at render time and may never alter a

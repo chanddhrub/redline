@@ -89,24 +89,23 @@ describe("the stub, told the truth", () => {
     expect(adhesion.text).toContain(payload.governingLawSentence as string);
   });
 
-  it("cites the summary the same way a flag is cited", async () => {
+  it("supports every summary claim the same way a flag is supported", async () => {
     const payload = await analyse(stub(), adhesion);
 
-    expect(payload.summary.citations.length).toBeGreaterThan(0);
-    for (const citation of payload.summary.citations) {
-      expect(adhesion.text).toContain(citation);
+    expect(payload.summary.claims.length).toBeGreaterThan(0);
+    for (const { claim, sourceSentence } of payload.summary.claims) {
+      expect(claim).not.toBe("");
+      expect(adhesion.text).toContain(sourceSentence);
     }
   });
 
-  it("returns a finding for every clause type checked, on a clean document too", async () => {
+  it("summarises a clean document from sentences that are in it", async () => {
     const payload = await analyse(stub(), clean);
 
     expect(payload.candidates).toEqual([]);
-    expect(payload.coverage.map((c) => c.clauseType)).toEqual(
-      clean.sidecar.clauseTypesChecked,
-    );
-    for (const entry of payload.coverage) {
-      expect(entry.finding).not.toBe("");
+    expect(payload.summary.claims.length).toBeGreaterThan(0);
+    for (const { sourceSentence } of payload.summary.claims) {
+      expect(clean.text).toContain(sourceSentence);
     }
   });
 
@@ -153,8 +152,8 @@ describe("the stub, lying", () => {
       for (const candidate of payload.candidates) {
         expect(adhesion.text).not.toContain(candidate.sourceSentence);
       }
-      for (const citation of payload.summary.citations) {
-        expect(adhesion.text).not.toContain(citation);
+      for (const { sourceSentence } of payload.summary.claims) {
+        expect(adhesion.text).not.toContain(sourceSentence);
       }
     });
   }

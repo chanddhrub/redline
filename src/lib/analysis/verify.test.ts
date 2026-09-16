@@ -188,15 +188,13 @@ describe("the gate, negatively", () => {
     it(`drops every summary citation when the model returns ${label}`, async () => {
       const document = await parseFixture("adhesion-contract");
       const payload = await modelAnalysis("adhesion-contract", corruptions);
+      const claimed = payload.summary.claims.map((c) => c.sourceSentence);
 
-      const { citations, dropped } = verifyQuotes(
-        payload.summary.citations,
-        document,
-      );
+      const { citations, dropped } = verifyQuotes(claimed, document);
 
-      expect(payload.summary.citations.length).toBeGreaterThan(0);
+      expect(claimed.length).toBeGreaterThan(0);
       expect(citations.length).toBe(0);
-      expect(dropped.length).toBe(payload.summary.citations.length);
+      expect(dropped.length).toBe(claimed.length);
     });
   }
 
@@ -316,7 +314,10 @@ describe("the standing check", () => {
       for (const corruptions of runs) {
         const payload = await modelAnalysis(name, corruptions);
         const { flags } = verifyFlags(payload.candidates, document);
-        const summary = verifyQuotes(payload.summary.citations, document);
+        const summary = verifyQuotes(
+          payload.summary.claims.map((c) => c.sourceSentence),
+          document,
+        );
 
         for (const flag of flags) {
           expect(flag.citation.span.start).toBeGreaterThanOrEqual(0);
