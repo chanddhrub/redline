@@ -1,6 +1,6 @@
 # 09: The smoke script
 
-Status: ready-for-agent
+Status: done 2026-09-16
 
 **What to build:** `pnpm smoke` — one command that runs the planted fixture
 contract through the real pipeline, end to end, and prints the flags it produced
@@ -24,14 +24,14 @@ than pretending to have run.
 
 **Blocked by:** 04.
 
-- [ ] `pnpm smoke` is a package script and runs from a clean checkout
-- [ ] It runs the planted fixture through the real parse, the real request and
+- [x] `pnpm smoke` is a package script and runs from a clean checkout
+- [x] It runs the planted fixture through the real parse, the real request and
       the real model client — nothing stubbed
-- [ ] It prints each flag with its severity, clause type, verbatim source
+- [x] It prints each flag with its severity, clause type, verbatim source
       sentence and character span
-- [ ] It prints the coverage receipt
-- [ ] It prints how many candidates were dropped and why
-- [ ] It asserts, and reports, that every printed flag's span slices the stored
+- [x] It prints the coverage receipt
+- [x] It prints how many candidates were dropped and why
+- [x] It asserts, and reports, that every printed flag's span slices the stored
       text back to the printed sentence exactly
-- [ ] With no API key it says so and exits non-zero
-- [ ] It writes nothing to the database and sends no file anywhere
+- [x] With no API key it says so and exits non-zero
+- [x] It writes nothing to the database and sends no file anywhere
