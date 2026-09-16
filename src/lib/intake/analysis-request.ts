@@ -42,6 +42,14 @@ export const US_STATES = [
 
 export type UsState = (typeof US_STATES)[number];
 
+const US_STATE_SET: ReadonlySet<string> = new Set(US_STATES);
+
+/** The boundary guard. A `<select>` hands back a string, and a string cast to
+ *  `UsState` is a lie the compiler cannot catch. */
+export function isUsState(value: string): value is UsState {
+  return US_STATE_SET.has(value);
+}
+
 export function emptyRequest(): AnalysisRequestState {
   return { document: null, jurisdiction: null, redLines: [] };
 }
@@ -53,10 +61,19 @@ export function setDocument(
   return { ...state, document };
 }
 
+/** The state the reader works in. Setting it again replaces it rather than
+ *  adding to it, because the answer is one state and changing it is expected:
+ *  a mistake gets corrected, and a role in another state gets checked.
+ *
+ *  Anything that is not a US state is ignored and the state comes back
+ *  unchanged, the same way a blank red line is ignored. The jurisdiction is
+ *  required before analysis can run, and "required" is worth nothing if a
+ *  stray string can satisfy it. */
 export function setJurisdiction(
   state: AnalysisRequestState,
   usState: UsState,
 ): AnalysisRequestState {
+  if (!isUsState(usState)) return state;
   return { ...state, jurisdiction: usState };
 }
 

@@ -1,6 +1,6 @@
 # 06: The state you work in
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** A job seeker is asked which US state they work in, and told why before they answer: the same clause carries different weight in different states, and that information will be shown as a separate, labelled layer rather than mixed into the quoted-sentence findings. One question with its reason attached, not a form — it is the one thing standing between the user and their analysis, so it has to be worth the stop.
 
@@ -10,9 +10,9 @@ Intake collects the state and ships no state-level legal content; that corpus be
 
 **Blocked by:** 01.
 
-- [ ] The user is asked for a US state, with the reason stated before they answer
-- [ ] The state is required before analysis can run
-- [ ] The state can be changed after it has been set
-- [ ] The state currently in use is visible on screen
-- [ ] `setJurisdiction` is a pure operation on the analysis-request state — no React, no storage, no I/O
-- [ ] No state-level legal content ships in this ticket
+- [x] The user is asked for a US state, with the reason stated before they answer
+- [x] The state is required before analysis can run
+- [x] The state can be changed after it has been set
+- [x] The state currently in use is visible on screen
+- [x] `setJurisdiction` is a pure operation on the analysis-request state — no React, no storage, no I/O
+- [x] No state-level legal content ships in this ticket

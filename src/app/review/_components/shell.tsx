@@ -6,6 +6,7 @@ import {
   editRedLine,
   emptyRequest,
   isReady,
+  isUsState,
   removeRedLine,
   setDocument,
   setJurisdiction,
@@ -188,7 +189,7 @@ export function Shell() {
 
   return (
     <div className="min-h-screen bg-ink text-paper lg:flex">
-      <Rail ready={ready} sample={sample} />
+      <Rail ready={ready} sample={sample} jurisdiction={request.jurisdiction} />
 
       <main className="min-w-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         {/* ── The document. The fixed thing on the screen. ───────────── */}
@@ -343,7 +344,15 @@ export function Shell() {
 
 /* ── Chrome ──────────────────────────────────────────────────────────── */
 
-function Rail({ ready, sample }: { ready: boolean; sample: boolean }) {
+function Rail({
+  ready,
+  sample,
+  jurisdiction,
+}: {
+  ready: boolean;
+  sample: boolean;
+  jurisdiction: UsState | null;
+}) {
   const marks = [
     { href: "#document", label: "Document" },
     { href: "#findings", label: "Findings" },
@@ -362,9 +371,24 @@ function Rail({ ready, sample }: { ready: boolean; sample: boolean }) {
           </a>
         ))}
       </nav>
+      {/* The state in use, wherever the reader has scrolled to: the
+          enforceability layer is keyed to it, so it is never out of sight. */}
+      <a
+        href="#jurisdiction"
+        className="mark mark-ink shrink-0 whitespace-nowrap border-2 border-ink px-2 py-1 lg:mt-auto lg:whitespace-normal"
+      >
+        {jurisdiction ? (
+          <>
+            <span className="hidden lg:inline">Working in </span>
+            {jurisdiction}
+          </>
+        ) : (
+          "State not set"
+        )}
+      </a>
       {/* Reserved: the saved library takes the position below this rule when
           it arrives. Deferred by ADR 0002 — nothing is designed or shown. */}
-      <p className="label hidden text-burnt lg:mt-auto lg:block">
+      <p className="label hidden text-burnt lg:block">
         {sample ? "Sample loaded" : ready ? "Ready to analyse" : "Session only · nothing saved"}
       </p>
     </div>
@@ -609,41 +633,67 @@ function Jurisdiction({
   onChange: (v: UsState) => void;
 }) {
   return (
-    <>
+    <div className="on-ink">
       <SectionHead
         id="jurisdiction"
         title="Where you work"
         note="Asked because the same clause carries different weight in different states"
       />
       <div className="px-4 py-4 sm:px-6">
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-          This is shown back to you as a separate, labelled layer — never mixed
-          into the sentences quoted from your document, and it never changes a
-          flag&rsquo;s severity.
-        </p>
-        <label htmlFor="state" className="mark mt-4 block">
-          US state
-        </label>
-        <select
-          id="state"
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value as UsState)}
-          className="mt-2 w-full max-w-xs border-2 border-spot bg-paper px-3 py-2 font-voice text-[0.9375rem] text-ink"
+        <p
+          id="jurisdiction-why"
+          className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper"
         >
-          <option value="" disabled>
-            Choose your state…
-          </option>
-          {US_STATES.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          The same clause does not mean the same thing in every state, and a
+          finding that is accurate about your contract can still be no use to
+          you without that. Where you work decides which context Redline shows.
+          That context sits beside the findings on its own labelled panel: it is
+          never mixed into the sentences quoted from your document, and it never
+          changes a flag&rsquo;s severity.
+        </p>
+
+        <label htmlFor="state" className="label mt-6 block text-paper/70">
+          State you work in
+        </label>
+        <span className="state-field mt-2">
+          <select
+            id="state"
+            required
+            autoComplete="address-level1"
+            aria-describedby="jurisdiction-why"
+            value={value ?? ""}
+            onChange={(e) => {
+              if (isUsState(e.target.value)) onChange(e.target.value);
+            }}
+            className="state-select"
+          >
+            <option value="" disabled>
+              Choose a state
             </option>
-          ))}
-        </select>
+            {US_STATES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </span>
+
         {value ? (
-          <p className="label mt-2 text-spot">In use: {value}</p>
-        ) : null}
+          <div className="mt-4">
+            <p className="label state-stamp">In use: {value}</p>
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+              Every enforceability note you are shown is keyed to {value}. You
+              can change it whenever you like, to fix a mistake or to see how
+              the same contract reads somewhere else.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            It is the only question Redline asks before it reads your document.
+          </p>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 

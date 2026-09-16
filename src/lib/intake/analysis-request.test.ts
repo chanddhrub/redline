@@ -8,6 +8,7 @@ import {
   setDocument,
   setJurisdiction,
   toAnalysisRequest,
+  US_STATES,
   whatIsMissing,
 } from "./analysis-request";
 import type { ParsedDocument } from "./parse-document";
@@ -69,6 +70,97 @@ describe("red lines", () => {
     let s = addRedLine(emptyRequest(), "One");
     s = addRedLine(s, "One");
     expect(s.redLines[0].id).not.toBe(s.redLines[1].id);
+  });
+});
+
+describe("the state you work in", () => {
+  it("is absent until it is answered, and named once it is", () => {
+    const before = emptyRequest();
+    expect(before.jurisdiction).toBeNull();
+
+    const after = setJurisdiction(before, "California");
+    expect(after.jurisdiction).toBe("California");
+    expect(before.jurisdiction).toBeNull();
+  });
+
+  it("is replaced, not accumulated, when it is changed", () => {
+    let s = setJurisdiction(emptyRequest(), "California");
+    s = setJurisdiction(s, "Texas");
+    s = setJurisdiction(s, "New York");
+    expect(s.jurisdiction).toBe("New York");
+  });
+
+  it("carries the changed state through to the analysis request", () => {
+    let s = setJurisdiction(setDocument(emptyRequest(), doc), "California");
+    expect(toAnalysisRequest(s)!.jurisdiction).toBe("California");
+
+    s = setJurisdiction(s, "Washington");
+    expect(toAnalysisRequest(s)!.jurisdiction).toBe("Washington");
+  });
+
+  it("holds the document and the red lines steady across a change", () => {
+    let s = setDocument(emptyRequest(), doc);
+    s = addRedLine(s, "No IP assignment covering personal projects");
+    s = setJurisdiction(s, "California");
+    const wasReady = isReady(s);
+
+    s = setJurisdiction(s, "Oregon");
+    expect(isReady(s)).toBe(wasReady);
+    expect(s.document).toBe(doc);
+    expect(s.redLines.map((r) => r.text)).toEqual([
+      "No IP assignment covering personal projects",
+    ]);
+  });
+
+  it("blocks analysis until it is answered, whatever else is present", () => {
+    let s = setDocument(emptyRequest(), doc);
+    s = addRedLine(s, "No non-compete at all");
+    expect(isReady(s)).toBe(false);
+    expect(toAnalysisRequest(s)).toBeNull();
+    expect(whatIsMissing(s)).toContain("the state you work in");
+
+    s = setJurisdiction(s, "Illinois");
+    expect(isReady(s)).toBe(true);
+    expect(toAnalysisRequest(s)).not.toBeNull();
+  });
+
+  it("ignores anything that is not a US state, rather than accepting it", () => {
+    const typo = setJurisdiction(emptyRequest(), "Californa" as never);
+    expect(typo.jurisdiction).toBeNull();
+    expect(isReady(setDocument(typo, doc))).toBe(false);
+
+    const blank = setJurisdiction(emptyRequest(), "" as never);
+    expect(blank.jurisdiction).toBeNull();
+
+    const kept = setJurisdiction(
+      setJurisdiction(emptyRequest(), "Colorado"),
+      "Ontario" as never,
+    );
+    expect(kept.jurisdiction).toBe("Colorado");
+  });
+
+  it("accepts every state the reader is offered", () => {
+    for (const name of US_STATES) {
+      const s = setJurisdiction(setDocument(emptyRequest(), doc), name);
+      expect(s.jurisdiction).toBe(name);
+      expect(isReady(s)).toBe(true);
+    }
+    expect(new Set(US_STATES).size).toBe(US_STATES.length);
+  });
+
+  it("offers no legal content alongside the state, only the state", () => {
+    const s = setJurisdiction(setDocument(emptyRequest(), doc), "California");
+    expect(Object.keys(s).sort()).toEqual([
+      "document",
+      "jurisdiction",
+      "redLines",
+    ]);
+    expect(Object.keys(toAnalysisRequest(s)!).sort()).toEqual([
+      "jurisdiction",
+      "redLines",
+      "sentences",
+      "text",
+    ]);
   });
 });
 
