@@ -190,7 +190,7 @@ interface Analysis {
   flags: RankedFlag[]
   coverage: CoverageReceipt
   enforceability: EnforceabilityNote[]
-  governingLaw: Flag | null
+  governingLaw: Citation | null
   dropped: DroppedFlag[]
 }
 ```
@@ -205,7 +205,12 @@ interface Analysis {
   severity. **This spec ships no state-level legal corpus.** It ships the layer,
   its labelling, and a small honest starting set whose provenance and staleness
   are recorded beside it (ADR 0005, PRD §6.6).
-- `governingLaw` is a `Flag`-shaped citation because it *is* in the document.
+- `governingLaw` is a `Citation` because it *is* in the document. A `Citation`
+  is the verified-quote primitive the gate returns: a located span and the
+  document's own bytes. It is not a `Flag`, because a governing-law sentence has
+  no clause type, no severity and no counter-offer, and inventing those fields to
+  fit one type would be a lie about what was read. Corrected 2026-09-15, after
+  the gate was built.
 - `dropped` is carried out of the pipeline so the smoke script and the tests can
   count what the gate rejected. It is not rendered.
 
@@ -216,7 +221,7 @@ answer(question: string, request: AnalysisRequest, model: ModelClient):
   Promise<Answer>
 
 type Answer =
-  | { kind: 'answered'; text: string; citations: Flag[] }
+  | { kind: 'answered'; text: string; citations: Citation[] }
   | { kind: 'not-addressed' }
 ```
 

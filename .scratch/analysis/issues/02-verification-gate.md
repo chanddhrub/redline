@@ -1,6 +1,6 @@
 # 02: The verification gate
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** The thing standing between the model and the reader. Every
 candidate flag the model returns carries a source sentence; every one of them is
@@ -22,17 +22,17 @@ falsifying result arriving through the back door.
 
 **Blocked by:** intake tickets 01 and 02 (`locate` and its normalisation).
 
-- [ ] `verifyFlags` takes candidates and a parsed document and returns the flags
+- [x] `verifyFlags` takes candidates and a parsed document and returns the flags
       that survived alongside the drops and their reasons
-- [ ] A `Flag` cannot be constructed without a located span; the compiler
+- [x] A `Flag` cannot be constructed without a located span; the compiler
       enforces it
-- [ ] Every surviving flag's span slices the canonical text back to the quoted
+- [x] Every surviving flag's span slices the canonical text back to the quoted
       sentence exactly
-- [ ] Positive corpus from the fixture sidecar: every planted clause's verbatim
+- [x] Positive corpus from the fixture sidecar: every planted clause's verbatim
       sentence survives
-- [ ] Negative corpus: paraphrase, one word changed, a sentence from the other
+- [x] Negative corpus: paraphrase, one word changed, a sentence from the other
       fixture, a subtle rewording — each is dropped, and zero reach the reader
-- [ ] Drops carry a reason and are returned, never rendered
-- [ ] The same gate is available to the summary and to question answers
-- [ ] No fuzzy matching, no best-effort quote repair, no nearest-sentence
+- [x] Drops carry a reason and are returned, never rendered
+- [x] The same gate is available to the summary and to question answers
+- [x] No fuzzy matching, no best-effort quote repair, no nearest-sentence
       fallback exists anywhere in the gate
