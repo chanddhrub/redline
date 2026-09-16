@@ -1,6 +1,6 @@
 # 08: Ready to analyse
 
-Status: ready-for-agent
+Status: done 2026-09-15
 
 **What to build:** A job seeker can see exactly what is still needed before analysis can run, rather than hunting for a disabled button's reason. Once a document has been parsed and a state is set, analysis becomes available and the path forward is obvious. Red lines remain optional.
 
@@ -10,11 +10,11 @@ Everything the user has entered survives an accidental in-page navigation. State
 
 **Blocked by:** 06, 07.
 
-- [ ] The page names what is still missing, in plain words, at every point before analysis is available
-- [ ] Analysis becomes available once a parsed document and a state are both present
-- [ ] Red lines are not required for readiness
-- [ ] `toAnalysisRequest` returns `null` until both a document and a state are present, and otherwise returns text, sentences, jurisdiction and red lines
-- [ ] Document text, state and red lines survive an accidental in-page navigation
-- [ ] `sessionStorage` only; no `localStorage` anywhere
-- [ ] No database, no auth, no Supabase
-- [ ] Tests drive sequences of operations and assert the resulting state and readiness, including red lines surviving a jurisdiction change
+- [x] The page names what is still missing, in plain words, at every point before analysis is available
+- [x] Analysis becomes available once a parsed document and a state are both present
+- [x] Red lines are not required for readiness
+- [x] `toAnalysisRequest` returns `null` until both a document and a state are present, and otherwise returns text, sentences, jurisdiction and red lines
+- [x] Document text, state and red lines survive an accidental in-page navigation
+- [x] `sessionStorage` only; no `localStorage` anywhere
+- [x] No database, no auth, no Supabase
+- [x] Tests drive sequences of operations and assert the resulting state and readiness, including red lines surviving a jurisdiction change

@@ -3,15 +3,18 @@ import {
   addRedLine,
   editRedLine,
   emptyRequest,
+  INTAKE_SESSION_KEY,
   isReady,
   removeRedLine,
+  restoreIntake,
+  serialiseIntake,
   setDocument,
   setJurisdiction,
   toAnalysisRequest,
   US_STATES,
   whatIsMissing,
 } from "./analysis-request";
-import type { ParsedDocument } from "./parse-document";
+import { parseDocument, type ParsedDocument } from "./parse-document";
 
 const doc: ParsedDocument = {
   text: "A sentence. Another sentence.",
@@ -337,5 +340,209 @@ describe("toAnalysisRequest", () => {
       "id",
       "text",
     ]);
+  });
+});
+
+/* ── Surviving an accidental in-page navigation ──────────────────────── */
+
+const CONTRACT = [
+  "You will be employed as a Senior Engineer at Acme Inc. starting on 1 March.",
+  "For twelve months after you leave, you will not work for any competitor in any state where the Company does business.",
+  "All inventions you create, whether or not on Company time or equipment, are assigned to the Company.",
+  "Any dispute will be resolved by binding arbitration in Delaware, and you waive your right to a jury trial.",
+].join(" ");
+
+async function readContract() {
+  const bytes = new TextEncoder().encode(CONTRACT);
+  const result = await parseDocument(
+    bytes.buffer.slice(0) as ArrayBuffer,
+    "offer.txt",
+  );
+  if (!result.ok) throw new Error(`fixture text was refused: ${result.refusal.kind}`);
+  return result.document;
+}
+
+/** Stands in for the browser's store and nothing else — the serialising it
+ *  carries is the real thing the shell writes. */
+function fakeSessionStorage() {
+  const cells = new Map<string, string>();
+  return {
+    getItem: (key: string) => cells.get(key) ?? null,
+    setItem: (key: string, value: string) => void cells.set(key, value),
+  };
+}
+
+describe("a session that survives a navigation", () => {
+  it("brings back the document, the state and the red lines", async () => {
+    const parsed = await readContract();
+    let before = setDocument(emptyRequest(), parsed);
+    before = setJurisdiction(before, "California");
+    before = addRedLine(before, "I will not sign an IP assignment covering personal projects");
+    before = addRedLine(before, "I will not sign a non-compete longer than six months");
+
+    const store = fakeSessionStorage();
+    store.setItem(
+      INTAKE_SESSION_KEY,
+      serialiseIntake(before, { filename: "offer.txt", source: "yours" }),
+    );
+
+    const { state, origin } = await restoreIntake(store.getItem(INTAKE_SESSION_KEY));
+
+    expect(state.document!.text).toBe(parsed.text);
+    expect(state.document!.sentences).toEqual(parsed.sentences);
+    expect(state.jurisdiction).toBe("California");
+    expect(state.redLines).toEqual(before.redLines);
+    expect(origin).toEqual({ filename: "offer.txt", source: "yours" });
+    expect(isReady(state)).toBe(true);
+    expect(whatIsMissing(state)).toEqual([]);
+    expect(toAnalysisRequest(state)).toEqual(toAnalysisRequest(before));
+  });
+
+  it("brings back a document that can still be quoted from", async () => {
+    const parsed = await readContract();
+    const before = setJurisdiction(setDocument(emptyRequest(), parsed), "California");
+
+    const { state } = await restoreIntake(
+      serialiseIntake(before, { filename: "offer.txt", source: "yours" }),
+    );
+    const restored = state.document!;
+
+    // Every sentence the reader confirmed on screen is still findable, and
+    // the span still slices the stored text back to that exact sentence.
+    for (const sentence of parsed.sentences) {
+      const span = restored.locate(sentence.text);
+      expect(span).not.toBeNull();
+      expect(restored.text.slice(span!.start, span!.end)).toBe(sentence.text);
+    }
+
+    // Typography a model changes on the way out is still tolerated.
+    const quote =
+      "All inventions you create, whether or not on Company time or equipment, are assigned to the Company.";
+    const spaced = restored.locate(`  ${quote.replace(/ /g, "  ")}\n`);
+    expect(spaced).not.toBeNull();
+    expect(restored.text.slice(spaced!.start, spaced!.end)).toBe(quote);
+
+    // And a sentence that is not in the document is still refused rather
+    // than guessed at.
+    expect(
+      restored.locate("You may keep any invention you make on your own time."),
+    ).toBeNull();
+    expect(
+      restored.locate(
+        "For six months after you leave, you will not work for any competitor in any state where the Company does business.",
+      ),
+    ).toBeNull();
+  });
+
+  it("holds a half-finished intake without pretending it is ready", async () => {
+    const half = addRedLine(setJurisdiction(emptyRequest(), "New York"), "No arbitration");
+
+    const { state, origin } = await restoreIntake(serialiseIntake(half, null));
+
+    expect(state.document).toBeNull();
+    expect(origin).toBeNull();
+    expect(state.jurisdiction).toBe("New York");
+    expect(state.redLines.map((r) => r.text)).toEqual(["No arbitration"]);
+    expect(isReady(state)).toBe(false);
+    expect(whatIsMissing(state)).toEqual(["a document"]);
+    expect(toAnalysisRequest(state)).toBeNull();
+  });
+
+  it("starts clean when there is nothing to come back to", async () => {
+    for (const raw of [null, "", "{", "null", "[]", '"a string"']) {
+      const { state, origin } = await restoreIntake(raw);
+      expect(state).toEqual(emptyRequest());
+      expect(origin).toBeNull();
+      expect(isReady(state)).toBe(false);
+      expect(whatIsMissing(state)).toEqual(["a document", "the state you work in"]);
+    }
+  });
+
+  it("drops what did not survive intact rather than half-restoring it", async () => {
+    const { state } = await restoreIntake(
+      JSON.stringify({
+        text: null,
+        origin: null,
+        jurisdiction: "Ontario",
+        redLines: [
+          { id: "rl-1", text: "Keep me" },
+          { id: "rl-2", text: "   " },
+          { id: 7, text: "No id" },
+          { text: "No id at all" },
+          "not an object",
+          null,
+        ],
+      }),
+    );
+    expect(state.jurisdiction).toBeNull();
+    expect(state.redLines).toEqual([{ id: "rl-1", text: "Keep me" }]);
+  });
+
+  it("keeps nothing of the document but its text", async () => {
+    const parsed = await readContract();
+    const state = setJurisdiction(setDocument(emptyRequest(), parsed), "Texas");
+    const written = JSON.parse(
+      serialiseIntake(state, { filename: "offer.txt", source: "yours" }),
+    ) as Record<string, unknown>;
+
+    expect(Object.keys(written).sort()).toEqual([
+      "jurisdiction",
+      "origin",
+      "redLines",
+      "text",
+    ]);
+    expect(written.text).toBe(parsed.text);
+    // Sentences are re-read from the text, never stored: a stored copy would
+    // restore alongside a locate that is gone, and break every citation.
+    expect(JSON.stringify(written)).not.toContain("sentences");
+  });
+
+  it("forgets the document once the reader replaces it", async () => {
+    const parsed = await readContract();
+    const loaded = setJurisdiction(setDocument(emptyRequest(), parsed), "Texas");
+    const cleared = setDocument(loaded, null);
+
+    const { state, origin } = await restoreIntake(
+      serialiseIntake(cleared, { filename: "offer.txt", source: "yours" }),
+    );
+    expect(state.document).toBeNull();
+    expect(origin).toBeNull();
+    expect(state.jurisdiction).toBe("Texas");
+  });
+
+  it("survives more than one navigation", async () => {
+    const parsed = await readContract();
+    let state = setJurisdiction(setDocument(emptyRequest(), parsed), "Washington");
+    state = addRedLine(state, "I will not repay a signing bonus if I am laid off");
+
+    const store = fakeSessionStorage();
+    let origin: { filename: string; source: "yours" | "sample" } | null = {
+      filename: "offer.txt",
+      source: "yours",
+    };
+
+    for (let hop = 0; hop < 3; hop += 1) {
+      store.setItem(INTAKE_SESSION_KEY, serialiseIntake(state, origin));
+      const back = await restoreIntake(store.getItem(INTAKE_SESSION_KEY));
+      state = back.state;
+      origin = back.origin;
+    }
+
+    expect(state.document!.text).toBe(parsed.text);
+    expect(state.document!.locate(parsed.sentences[1].text)).not.toBeNull();
+    expect(state.jurisdiction).toBe("Washington");
+    expect(state.redLines.map((r) => r.text)).toEqual([
+      "I will not repay a signing bonus if I am laid off",
+    ]);
+    expect(origin).toEqual({ filename: "offer.txt", source: "yours" });
+  });
+
+  it("remembers a sample loaded from the page as a sample", async () => {
+    const parsed = await readContract();
+    const state = setJurisdiction(setDocument(emptyRequest(), parsed), "Oregon");
+    const { origin } = await restoreIntake(
+      serialiseIntake(state, { filename: "sample-offer.txt", source: "sample" }),
+    );
+    expect(origin).toEqual({ filename: "sample-offer.txt", source: "sample" });
   });
 });

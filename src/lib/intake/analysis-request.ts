@@ -8,7 +8,11 @@
  * exist yet. Defining it here is the point.
  */
 
-import type { ParsedDocument, Sentence } from "./parse-document";
+import {
+  parseDocument,
+  type ParsedDocument,
+  type Sentence,
+} from "./parse-document";
 
 /** A constraint the reader declares in their own words. Two fields, and it
  *  stays at two: intake carries red lines and does nothing else with them.
@@ -155,4 +159,115 @@ export function toAnalysisRequest(
     jurisdiction: state.jurisdiction,
     redLines: state.redLines,
   };
+}
+
+/* ── Surviving an accidental in-page navigation ──────────────────────── */
+
+/** Where the reader's session is kept while the tab is open.
+ *
+ *  `sessionStorage`, never `localStorage`. A shared machine must not still
+ *  have someone's offer letter in it tomorrow morning. Nothing goes to a
+ *  server and nothing goes to a database. */
+export const INTAKE_SESSION_KEY = "redline.intake";
+
+/** What the document is called and where it came from. The seam carries it
+ *  because a restored page that cannot name the document it is showing is a
+ *  page the reader has to take on trust. */
+export interface IntakeOrigin {
+  filename: string;
+  source: "yours" | "sample";
+}
+
+export interface RestoredIntake {
+  state: AnalysisRequestState;
+  origin: IntakeOrigin | null;
+}
+
+interface StoredIntake {
+  text: string | null;
+  origin: IntakeOrigin | null;
+  jurisdiction: UsState | null;
+  redLines: RedLine[];
+}
+
+/** The canonical text goes in, and nothing else from the document does.
+ *
+ *  `ParsedDocument` carries a `locate` method, and a method does not survive
+ *  a round trip through JSON. Storing the sentences too would produce a
+ *  document that looks whole and whose `locate` is gone — every citation
+ *  broken after a refresh, silently. So only the text is kept, and
+ *  `restoreIntake` reads it back through the same parser that produced it. */
+export function serialiseIntake(
+  state: AnalysisRequestState,
+  origin: IntakeOrigin | null,
+): string {
+  const stored: StoredIntake = {
+    text: state.document ? state.document.text : null,
+    origin: state.document ? origin : null,
+    jurisdiction: state.jurisdiction,
+    redLines: state.redLines,
+  };
+  return JSON.stringify(stored);
+}
+
+function storedRedLines(value: unknown): RedLine[] {
+  if (!Array.isArray(value)) return [];
+  const lines: RedLine[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") continue;
+    const { id, text } = entry as { id?: unknown; text?: unknown };
+    if (typeof id !== "string" || typeof text !== "string") continue;
+    if (!text.trim()) continue;
+    lines.push({ id, text });
+  }
+  return lines;
+}
+
+/** Reads a session back. Anything that does not survive intact is dropped
+ *  rather than half-restored: a jurisdiction that is not a US state, a red
+ *  line that is not two strings, a document whose text will not re-read.
+ *
+ *  The document is re-read through `parseDocument`, which is what makes the
+ *  restored `locate` a real one rather than a shape that type-checks. The
+ *  parser is a pure function of the text it is given, so the sentences come
+ *  back identical to the ones the reader already confirmed on screen. */
+export async function restoreIntake(raw: string | null): Promise<RestoredIntake> {
+  const empty: RestoredIntake = { state: emptyRequest(), origin: null };
+  if (!raw) return empty;
+
+  let stored: Partial<StoredIntake>;
+  try {
+    stored = JSON.parse(raw) as Partial<StoredIntake>;
+  } catch {
+    return empty;
+  }
+  if (!stored || typeof stored !== "object") return empty;
+
+  let state = emptyRequest();
+
+  if (typeof stored.jurisdiction === "string" && isUsState(stored.jurisdiction)) {
+    state = setJurisdiction(state, stored.jurisdiction);
+  }
+  state = { ...state, redLines: storedRedLines(stored.redLines) };
+
+  let origin: IntakeOrigin | null = null;
+  if (typeof stored.text === "string" && stored.text.trim()) {
+    const bytes = new TextEncoder().encode(stored.text);
+    const result = await parseDocument(
+      bytes.buffer.slice(0) as ArrayBuffer,
+      "restored-session.txt",
+    );
+    if (result.ok) {
+      state = setDocument(state, result.document);
+      const saved = stored.origin;
+      origin =
+        saved &&
+        typeof saved.filename === "string" &&
+        (saved.source === "yours" || saved.source === "sample")
+          ? { filename: saved.filename, source: saved.source }
+          : { filename: "your document", source: "yours" };
+    }
+  }
+
+  return { state, origin };
 }

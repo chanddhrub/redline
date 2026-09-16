@@ -5,15 +5,19 @@ import {
   addRedLine,
   editRedLine,
   emptyRequest,
+  INTAKE_SESSION_KEY,
   isReady,
   isUsState,
   removeRedLine,
+  restoreIntake,
+  serialiseIntake,
   setDocument,
   setJurisdiction,
   toAnalysisRequest,
   US_STATES,
   whatIsMissing,
   type AnalysisRequestState,
+  type IntakeOrigin,
   type UsState,
 } from "@/lib/intake/analysis-request";
 import {
@@ -78,10 +82,13 @@ export function Shell() {
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [restored, setRestored] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const source = phase.kind === "ready" ? phase.source : null;
   const sample = source === "sample";
+  const origin: IntakeOrigin | null =
+    phase.kind === "ready" ? { filename: phase.filename, source: phase.source } : null;
 
   const ingest = useCallback(async (bytes: ArrayBuffer, filename: string) => {
     setPhase({ kind: "parsing", filename, progress: 0 });
@@ -135,40 +142,56 @@ export function Shell() {
     if (fileRef.current) fileRef.current.value = "";
   }, []);
 
-  // Only the two things the reader typed survive an accidental in-page
-  // navigation. sessionStorage, never localStorage: a shared machine must not
-  // keep someone's offer letter.
+  // Everything the reader has entered survives an accidental in-page
+  // navigation: the document text, the state, the red lines. sessionStorage,
+  // never localStorage — a shared machine must not keep someone's offer
+  // letter. The serialising is the seam's, not this component's, so the round
+  // trip is tested without a DOM.
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("redline.intake");
-      if (!raw) return;
-      const saved = JSON.parse(raw) as {
-        jurisdiction: UsState | null;
-        redLines: { id: string; text: string }[];
-      };
-      setRequest((s) => ({
-        ...s,
-        jurisdiction: saved.jurisdiction ?? null,
-        redLines: saved.redLines ?? [],
-      }));
-    } catch {
-      /* a blocked or cleared store is a working state, not an error */
-    }
+    let live = true;
+    (async () => {
+      let raw: string | null = null;
+      try {
+        raw = sessionStorage.getItem(INTAKE_SESSION_KEY);
+      } catch {
+        /* a blocked or cleared store is a working state, not an error */
+      }
+      const { state, origin } = await restoreIntake(raw);
+      if (!live) return;
+      // A reader who started typing while the session was being read back
+      // keeps what they typed; the restore yields to them.
+      setRequest((current) =>
+        current.document || current.jurisdiction || current.redLines.length
+          ? current
+          : state,
+      );
+      if (state.document && origin) {
+        setPhase((p) =>
+          p.kind === "idle"
+            ? { kind: "ready", filename: origin.filename, source: origin.source }
+            : p,
+        );
+        if (origin.source === "sample") {
+          setActiveFinding((a) => a ?? findings[0]?.id ?? null);
+        }
+      }
+      setRestored(true);
+    })();
+    return () => {
+      live = false;
+    };
   }, []);
 
+  // Held until the restore has finished, or the empty first render would
+  // write over the session it is in the middle of reading back.
   useEffect(() => {
+    if (!restored) return;
     try {
-      sessionStorage.setItem(
-        "redline.intake",
-        JSON.stringify({
-          jurisdiction: request.jurisdiction,
-          redLines: request.redLines,
-        }),
-      );
+      sessionStorage.setItem(INTAKE_SESSION_KEY, serialiseIntake(request, origin));
     } catch {
-      /* ignore */
+      /* a full or blocked store costs the restore, not the session */
     }
-  }, [request.jurisdiction, request.redLines]);
+  }, [restored, request, origin]);
 
   const doc: ParsedDocument | null = request.document;
   const missing = whatIsMissing(request);
@@ -189,7 +212,12 @@ export function Shell() {
 
   return (
     <div className="min-h-screen bg-ink text-paper lg:flex">
-      <Rail ready={ready} sample={sample} jurisdiction={request.jurisdiction} />
+      <Rail
+        ready={ready}
+        missing={missing}
+        sample={sample}
+        jurisdiction={request.jurisdiction}
+      />
 
       {/* Everything past the rail is an ink plate, and a 3px ink outline on
           an ink ground is an outline nobody can see. `.on-ink` switches the
@@ -350,10 +378,12 @@ export function Shell() {
 
 function Rail({
   ready,
+  missing,
   sample,
   jurisdiction,
 }: {
   ready: boolean;
+  missing: string[];
   sample: boolean;
   jurisdiction: UsState | null;
 }) {
@@ -392,9 +422,20 @@ function Rail({
       </a>
       {/* Reserved: the saved library takes the position below this rule when
           it arrives. Deferred by ADR 0002 — nothing is designed or shown. */}
-      <p className="label hidden text-burnt lg:block">
-        {sample ? "Sample loaded" : ready ? "Ready to analyse" : "Session only · nothing saved"}
-      </p>
+      <div className="hidden lg:block">
+        {/* The reason a control is not available yet, kept in sight from
+            wherever the reader has scrolled to. */}
+        <p className="label text-burnt">
+          {sample
+            ? "Sample loaded"
+            : ready
+              ? "Ready to analyse"
+              : `Still needed: ${missing.join(" and ")}`}
+        </p>
+        <p className="label mt-1 text-ink/70">
+          Everything stays in this tab. Close it and it is gone.
+        </p>
+      </div>
     </div>
   );
 }
