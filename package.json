@@ -12,6 +12,8 @@
     "smoke": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-loader.mjs ./scripts/smoke.mts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
     "mammoth": "^1.12.3",
     "next": "16.3.4",
     "pdfjs-dist": "^6.3.289",

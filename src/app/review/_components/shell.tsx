@@ -18,8 +18,11 @@ import {
   whatIsMissing,
   type AnalysisRequestState,
   type IntakeOrigin,
+  type RedLine,
   type UsState,
 } from "@/lib/intake/analysis-request";
+import { mergeRedLines, sameRedLines } from "@/lib/account/red-lines";
+import { useAccount, type Account } from "@/lib/account/use-account";
 import {
   parseDocument,
   type ParsedDocument,
@@ -36,6 +39,7 @@ import {
   type WireAnswer,
   type WireSpan,
 } from "../_lib/wire";
+import { AccountPanel, type Keeping } from "./account";
 import { DocumentSheet } from "./sheet";
 import {
   AnswerPanel,
@@ -173,6 +177,26 @@ export function Shell() {
   const [dragging, setDragging] = useState(false);
   const [restored, setRestored] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const account = useAccount();
+  /**
+   * Where the keeping of red lines has got to, tied to the reader it belongs
+   * to. Carrying the id means signing out — or signing in as somebody else —
+   * makes the whole thing stale at once, rather than needing an effect to go
+   * round clearing up after it. `adopted` is what releases the saving below:
+   * a first sitting has nothing kept, so nothing on screen changes, and the
+   * lines just typed would otherwise never be written.
+   */
+  const [sync, setSync] = useState<{
+    userId: string;
+    adopted: boolean;
+    keeping: Keeping;
+  } | null>(null);
+  /** What the account is believed to hold, and whose. A change is measured
+   *  against this, so a re-render is not a write. */
+  const kept = useRef<{ userId: string; lines: RedLine[] } | null>(null);
+  /** The reader whose lines are being read back right now, so two loads do
+   *  not run at once. */
+  const adopting = useRef<string | null>(null);
   /** Only the newest run may write a result. A reader who edits a red line
    *  twice must not be shown the first run's answer because it came back
    *  second. */
@@ -454,6 +478,110 @@ export function Shell() {
     }
   }, [restored, request, origin]);
 
+  // What is on screen at this instant, for the two account effects below. A
+  // list read back after an await must be the list the reader has now, not the
+  // one they had when the request went out.
+  const latest = useRef(request);
+  useEffect(() => {
+    latest.current = request;
+  });
+
+  /** Who is signed in, if anyone, and how far their keeping has got. A sync
+   *  belonging to somebody else is no sync at all. */
+  const signedInAs = account.state.kind === "signed-in" ? account.state.userId : null;
+  const mine = sync && sync.userId === signedInAs ? sync : null;
+  const keeping: Keeping = mine?.keeping ?? { kind: "idle" };
+
+  /**
+   * Signing in brings the reader's kept lines back.
+   *
+   * Neither list is thrown away: what was kept comes first, and anything typed
+   * in this sitting that is not already among them follows. That merge changes
+   * the inputs to the ranking, so it re-runs an analysis that has already
+   * happened, exactly as typing a line does (PRD §3.3).
+   *
+   * It waits for the session restore. Merging against an empty first render
+   * would drop whatever the reader had typed before the tab reloaded.
+   */
+  useEffect(() => {
+    const store = account.store;
+    if (!store || !signedInAs || !restored) return;
+    const userId = signedInAs;
+    if (mine || adopting.current === userId) return;
+
+    adopting.current = userId;
+    let live = true;
+    void (async () => {
+      let theirs: RedLine[];
+      try {
+        theirs = await store.load();
+      } catch {
+        // Their lines are unreachable, not gone. What is on screen stays, the
+        // note says so, and nothing is written over what is kept on the
+        // strength of a failed read.
+        if (live) {
+          setSync({ userId, adopted: false, keeping: { kind: "unreachable" } });
+        }
+        return;
+      }
+      if (!live) return;
+      kept.current = { userId, lines: theirs };
+      setSync({ userId, adopted: true, keeping: { kind: "idle" } });
+      const current = latest.current;
+      const merged = mergeRedLines(theirs, current.redLines);
+      if (!sameRedLines(merged, current.redLines)) {
+        applyAndRerun({ ...current, redLines: merged }, "red-lines");
+      }
+    })();
+
+    return () => {
+      live = false;
+      adopting.current = null;
+    };
+    // `applyAndRerun` is rebuilt every render and this must run once per
+    // reader; `latest` is what keeps the merge reading current state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.store, signedInAs, mine, restored]);
+
+  /**
+   * And every change after that is kept.
+   *
+   * Only a real change is written — the same lines in the same order are not
+   * an edit — and only once their kept lines have been read, so a first
+   * sitting cannot overwrite what is stored with whatever happens to be on
+   * screen.
+   */
+  useEffect(() => {
+    const store = account.store;
+    if (!store || !signedInAs || !mine?.adopted) return;
+    const held = kept.current;
+    if (held?.userId !== signedInAs) return;
+    const lines = request.redLines;
+    if (sameRedLines(held.lines, lines)) return;
+
+    let live = true;
+    setSync({ userId: signedInAs, adopted: true, keeping: { kind: "saving" } });
+    store
+      .save(lines)
+      .then(() => {
+        kept.current = { userId: signedInAs, lines };
+        if (live) {
+          setSync({ userId: signedInAs, adopted: true, keeping: { kind: "saved" } });
+        }
+      })
+      .catch(() => {
+        // Said on screen rather than swallowed: the line is in front of them
+        // and not in their account, and only they can decide what to do about
+        // that.
+        if (live) {
+          setSync({ userId: signedInAs, adopted: true, keeping: { kind: "failed" } });
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [account.store, signedInAs, mine, request.redLines]);
+
   const doc: ParsedDocument | null = request.document;
   const missing = whatIsMissing(request);
   const ready = isReady(request);
@@ -501,6 +629,7 @@ export function Shell() {
         missing={missing}
         sample={sample}
         jurisdiction={request.jurisdiction}
+        signedIn={account.state.kind === "signed-in"}
       />
 
       {/* Everything past the rail is an ink plate, and a 3px ink outline on
@@ -636,6 +765,8 @@ export function Shell() {
           />
 
           <RedLines
+            account={account}
+            keeping={keeping}
             lines={request.redLines}
             draft={draft}
             setDraft={setDraft}
@@ -670,11 +801,13 @@ function Rail({
   missing,
   sample,
   jurisdiction,
+  signedIn,
 }: {
   ready: boolean;
   missing: string[];
   sample: boolean;
   jurisdiction: UsState | null;
+  signedIn: boolean;
 }) {
   const marks = [
     { href: "#document", label: "Document" },
@@ -721,8 +854,14 @@ function Rail({
               ? "Ready to analyse"
               : `Still needed: ${missing.join(" and ")}`}
         </p>
+        {/* True either way, and it has to stay true: signing in keeps the red
+            lines and nothing else, so the document's own line does not change
+            when somebody signs in. */}
         <p className="label mt-1 text-ink/70">
-          Everything stays in this tab. Close it and it is gone.
+          Your document stays in this tab. Close it and it is gone.
+        </p>
+        <p className="label mt-1 text-ink/70">
+          {signedIn ? "Your red lines are kept." : "So are your red lines."}
         </p>
       </div>
     </div>
@@ -1108,6 +1247,8 @@ function QuestionBox({
 /* ── Red lines ───────────────────────────────────────────────────────── */
 
 function RedLines({
+  account,
+  keeping,
   lines,
   draft,
   setDraft,
@@ -1118,6 +1259,8 @@ function RedLines({
   onRemove,
   reruns,
 }: {
+  account: Account;
+  keeping: Keeping;
   lines: { id: string; text: string }[];
   draft: string;
   setDraft: (v: string) => void;
@@ -1143,6 +1286,12 @@ function RedLines({
           A red line is something you have already decided you will not sign.
           Write it the way you would say it out loud.
         </p>
+        {/* Where these lines live, said next to where they are typed. The one
+            thing an account holds is this list, so the promise is made here
+            rather than at a door the reader never has to walk through. */}
+        <div className="mt-4">
+          <AccountPanel account={account} keeping={keeping} />
+        </div>
         {/* Ticket criterion, not a nicety: a reader who expects a red line to
             filter the output has been misled by us. */}
         <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
