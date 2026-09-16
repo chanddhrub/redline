@@ -33,38 +33,82 @@ type Phase =
   | { kind: "refused"; refusal: Refusal; filename: string }
   | { kind: "ready"; filename: string; source: "yours" | "sample" };
 
-/** Refusal copy is product surface, not an error string: what happened, why
- *  the standard exists, and what to do instead. */
-const REFUSAL_COPY: Record<
-  Refusal["kind"],
-  { what: string; why: string; instead: string }
-> = {
-  "no-text-layer": {
-    what: "This document has no readable text — it is a scan or a photograph.",
-    why: "Reading a picture of text means guessing at it, and a quoted sentence that was misread on the way in is worse than no quote at all, because it still looks checkable.",
-    instead: "Ask whoever sent it for the original Word or PDF file, or paste the text in directly.",
-  },
-  encrypted: {
-    what: "This PDF is password-protected, so its text cannot be opened here.",
-    why: "Your file is parsed in your browser and never uploaded, so there is nowhere to send a password.",
-    instead: "Save an unprotected copy from your PDF reader, or paste the text in directly.",
-  },
-  "unsupported-format": {
-    what: "This file format is not one Redline reads yet.",
-    why: "Right now Redline reads plain text. PDF and Word support are being built, and shipping a half-working reader would put quotes on screen that were never checked.",
-    instead: "Paste the text of your offer letter in directly, or save it as a .txt file.",
-  },
-  unreadable: {
-    what: "This file could not be read at all.",
-    why: "The bytes in it are not text Redline can decode, so there is nothing it could quote from honestly.",
-    instead: "Try another copy of the file, or paste the text in directly.",
-  },
-  empty: {
-    what: "This file is empty.",
-    why: "There is no text in it to read.",
-    instead: "Check you picked the right file, or paste the text in directly.",
-  },
-};
+interface RefusalCopy {
+  what: string;
+  why: string;
+  instead: string;
+}
+
+/**
+ * Refusal copy is product surface, not an error string. Every kind says three
+ * things: what happened, why Redline holds the standard, and what the reader
+ * can do next. A refusal with no next step is a dead end, and a refusal that
+ * apologises invites the reader to wait for the gap to be filled.
+ *
+ * `no-text-layer` is the one that must not read as a limitation. OCR is
+ * excluded permanently (ADR 0001): a citation is worthless when the text it
+ * points at was misread, and a misread sentence in quotation marks is harder
+ * to catch than no sentence at all.
+ */
+function refusalCopy(refusal: Refusal): RefusalCopy {
+  switch (refusal.kind) {
+    case "no-text-layer":
+      return {
+        what:
+          "This PDF is a picture of a document, a scan or a photo, so there is no text in it to read. " +
+          "A few words may have come through, a header or a page number, but not the contract.",
+        why:
+          "Redline will never run text recognition over a picture, and that is a permanent decision. " +
+          "A guessed sentence still arrives in quotation marks, and you would have no way to tell it " +
+          "from one that was really in your contract.",
+        instead:
+          "Ask whoever sent it for the Word or PDF original, or paste the text in here.",
+      };
+    case "encrypted":
+      return {
+        what: "This PDF is password-protected, so nothing inside it can be opened here.",
+        why:
+          "Your file is read in your own browser and never uploaded, and Redline has nowhere to take " +
+          "a password. The file has to be unlocked before it gets this far.",
+        instead:
+          "Open it in your PDF reader with the password and save an unprotected copy, or paste the " +
+          "text in here.",
+      };
+    case "unsupported-format":
+      return refusal.detected === "rtf"
+        ? {
+            what: "This is an RTF file. Redline reads PDF, .docx and plain text.",
+            why:
+              "Rich text keeps its formatting inline with its words, and sentences pulled back out of " +
+              "it come apart often enough that a quote could not be trusted to be what your contract says.",
+            instead:
+              "Open it in Word or TextEdit, save it again as a .docx or a PDF, or paste the text in here.",
+          }
+        : {
+            what:
+              "This is a .doc file, the Word format from before 2007. Redline reads PDF, .docx and " +
+              "plain text.",
+            why:
+              "Text pulled out of the old format comes back garbled often enough that a quoted sentence " +
+              "could not be trusted to be what your contract says.",
+            instead:
+              "Open it in Word, save it again as a .docx or a PDF, or paste the text in here.",
+          };
+    case "unreadable":
+      return {
+        what: "This file could not be read at all. It looks damaged.",
+        why:
+          "Nothing whole came out of it, and half a contract read wrongly is worse than no reading at all.",
+        instead: "Download it again, ask for another copy, or paste the text in here.",
+      };
+    case "empty":
+      return {
+        what: "There is nothing in this file.",
+        why: "It holds no text, so there is nothing to quote from.",
+        instead: "Check you picked the right file, or paste the text in here.",
+      };
+  }
+}
 
 /** The sample contract, assembled the way intake would store it. */
 const SAMPLE_TEXT = paragraphs
@@ -508,9 +552,8 @@ function Dropzone({
           Drop your offer letter here
         </p>
         <p className="mx-auto mt-3 max-w-[52ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-          Plain text for now — PDF and Word are being built. Your file is read
-          in this browser and never uploaded; only the text is kept, and only
-          until you close the tab.
+          PDF, Word or plain text. Your file is read in this browser and never
+          uploaded. Only the text is kept, and only until you close the tab.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
@@ -587,7 +630,7 @@ function RefusalPanel({
   onRetry: () => void;
   onPaste: () => void;
 }) {
-  const copy = REFUSAL_COPY[refusal.kind];
+  const copy = refusalCopy(refusal);
   return (
     <div className="border-2 border-spot">
       <p className="label border-b-2 border-spot bg-spot px-4 py-2 text-ink">

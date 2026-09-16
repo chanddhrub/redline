@@ -130,13 +130,45 @@ describe("parseDocument — what comes back", () => {
     expect(result.document.text).toBe(DOCX_TEXT);
   });
 
-  it("refuses a PDF it cannot read rather than returning half of one", async () => {
+  it("refuses a scanned PDF as having no text layer", async () => {
     const result = await parseFixture("scan.pdf");
-    expect(result.ok).toBe(false);
+    expect(result).toEqual({ ok: false, refusal: { kind: "no-text-layer" } });
+  });
+
+  // The one that matters. A copier's header stamp and a page number are text,
+  // and a reading built out of them would arrive looking exactly like a
+  // reading of the whole document. It is refused as the scan it is.
+  //
+  // The two PDF fixtures sit either side of the threshold on purpose:
+  // `mostly-scan.pdf` carries 34 characters over three pages, `offer.pdf`
+  // carries 674 over two. Tuning the threshold upward past roughly 300
+  // characters a page needs a longer readable fixture first.
+  it("refuses a mostly-scanned PDF as a scan rather than reading its fragments", async () => {
+    const result = await parseFixture("mostly-scan.pdf");
+    expect(result).toEqual({ ok: false, refusal: { kind: "no-text-layer" } });
+  });
+
+  it("refuses a password-protected PDF as encrypted, not as broken", async () => {
+    const result = await parseFixture("encrypted.pdf");
+    expect(result).toEqual({ ok: false, refusal: { kind: "encrypted" } });
+  });
+
+  it("refuses a truncated PDF as unreadable", async () => {
+    const result = await parseFixture("truncated.pdf");
+    expect(result).toEqual({ ok: false, refusal: { kind: "unreadable" } });
   });
 
   it("refuses a legacy .doc", async () => {
     const result = await parseFixture("legacy.doc");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.refusal).toEqual({ kind: "unsupported-format", detected: "doc" });
+  });
+
+  // The extension is not what decides it: a `.doc` renamed `.docx` is still
+  // the old format, and the name only reaches the message on screen.
+  it("refuses a legacy Word file by its bytes, whatever it is called", async () => {
+    const result = await parseDocument(bytes("legacy.doc"), "offer-letter.docx");
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.refusal).toEqual({ kind: "unsupported-format", detected: "doc" });
@@ -147,6 +179,19 @@ describe("parseDocument — what comes back", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.refusal.kind).toBe("unreadable");
+  });
+
+  // Intake has no opinion about what a document is. Guessing at that would be
+  // guessing at why the reader uploaded it; the analysis can say what it found.
+  it("parses a document that is not a contract at all", async () => {
+    const result = await parseFixture("not-a-contract.txt");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.document.text).toBe(
+      readFileSync(join(FIXTURES, "not-a-contract.txt"), "utf8"),
+    );
+    expect(result.document.text).toContain("Ring Mum back.");
+    expect(result.document.sentences.length).toBeGreaterThan(1);
   });
 });
 

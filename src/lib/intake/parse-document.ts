@@ -439,6 +439,25 @@ function join(previous: string): string {
   return CLOSES_A_LINE.test(tail) ? "\n" : " ";
 }
 
+/**
+ * How much text a page has to carry before the PDF counts as a document
+ * rather than a picture of one, averaged over the whole file.
+ *
+ * A scanned page is not always empty. It carries a header stamp, a page
+ * number, a fax banner, sometimes a text layer a copier bolted on for two
+ * words. Refusing only on nothing at all would let a file like that through
+ * and produce a thin reading that looks exactly like a whole one — which is
+ * the failure this number exists to prevent.
+ *
+ * 200 is conservative and provisional. A real offer letter runs well over a
+ * thousand characters a page, so the margin is wide, but the number has not
+ * yet met a shelf of real scanned offer letters and it should be tuned
+ * against them. Tune it upward rather than downward when in doubt: refusing
+ * a genuinely thin document is an annoyance the reader can recover from in
+ * one step, and analysing a scan is a promise broken without anyone noticing.
+ */
+const MIN_CHARS_PER_PAGE = 200;
+
 async function extractPdf(
   bytes: Uint8Array,
   onProgress?: ProgressListener,
@@ -487,10 +506,14 @@ async function extractPdf(
     lines.forEach((line, index) => {
       text += index === 0 ? line : join(lines[index - 1]) + line;
     });
-    // A PDF that yields nothing is a picture of a contract, not a contract.
-    // Saying so is the honest answer; OCR is excluded on purpose, and a
-    // citation into text a machine guessed at is worth less than no citation.
-    if (!text.trim()) return { ok: false, refusal: { kind: "no-text-layer" } };
+    // A PDF that yields nothing — or next to nothing spread over its pages —
+    // is a picture of a contract, not a contract. Saying so is the honest
+    // answer; OCR is excluded on purpose, and a citation into text a machine
+    // guessed at is worth less than no citation at all.
+    const carried = text.trim().length / Math.max(1, pdf.numPages);
+    if (carried < MIN_CHARS_PER_PAGE) {
+      return { ok: false, refusal: { kind: "no-text-layer" } };
+    }
     return { ok: true, text };
   } catch (error) {
     if ((error as { name?: string })?.name === "PasswordException") {
