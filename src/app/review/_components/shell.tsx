@@ -963,7 +963,12 @@ function Dropzone({
         <input
           ref={fileRef}
           type="file"
-          accept=".txt,text/plain"
+          /* Every format `parseDocument` reads. This list is a filter on the
+             chooser, not the check: format is detected from magic bytes, so a
+             renamed file is still read as what it actually is, and anything
+             this list lets through that we cannot read gets a refusal rather
+             than a degraded reading. */
+          accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           className="sr-only"
           onChange={(e) => onFiles(e.target.files)}
         />

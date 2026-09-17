@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Inspector } from "./_demo/inspector";
 
 const REFUSALS = [
@@ -32,13 +34,14 @@ const CLEAN_RECEIPT = [
 
 const ACTION = (
   <div className="mt-8">
-    <a href="#inspector" className="slug label">
-      <span>Try it on your document</span>
+    <Link href="/review" className="slug label">
+      <span>Read your document</span>
       <span className="slug-hatch hatch" aria-hidden="true" />
-    </a>
+    </Link>
     <p className="mt-3 max-w-[46ch] font-voice text-sm leading-relaxed text-burnt">
-      Intake is not open yet. Everything above is running live on the sample
-      contract shown here, not on a document of yours.
+      PDF, Word or pasted text. Your file is read in your browser and never
+      uploaded. The contract shown here is a sample, so you can see the shape
+      of it before you hand over your own.
     </p>
     <a
       href="#receipt"
@@ -62,9 +65,12 @@ export default function Home() {
             Read it before you sign it
           </span>
         </div>
-        <a href="#start" className="label underline decoration-2 hover:bg-ink hover:text-spot">
-          Try it
-        </a>
+        <Link
+          href="/review"
+          className="label underline decoration-2 hover:bg-ink hover:text-spot"
+        >
+          Read your document
+        </Link>
       </header>
 
       <div className="h-0.5 bg-ink" />
@@ -236,13 +242,13 @@ export default function Home() {
               genuinely open to being changed. Redline shows you which sentences
               are worth pushing on, and drafts the language to send back.
             </p>
-            <a
-              href="#inspector"
+            <Link
+              href="/review"
               className="slug label mt-9 border-paper bg-paper text-ink hover:bg-spot hover:text-ink"
             >
-              <span>Try it on your document</span>
+              <span>Read your document</span>
               <span className="slug-hatch hatch opacity-40" aria-hidden="true" />
-            </a>
+            </Link>
           </div>
         </section>
       </main>
