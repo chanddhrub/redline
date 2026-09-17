@@ -3,8 +3,8 @@
 Unattended run, 2026-09-15 into 2026-09-16. Every ticket in the repository is
 done. Nothing is blocked.
 
-**Read §4 first if you read nothing else.** It lists the three things this build
-could not verify, and one of them is the whole product working end to end.
+**Read §4 first if you read nothing else.** It lists what this build could not
+verify, including the fact that no browser has ever rendered a real result.
 
 ---
 
@@ -14,7 +14,7 @@ could not verify, and one of them is the whole product working end to end.
 pnpm build   passes
 pnpm test    passes — 410 tests, 11 files
 pnpm lint    clean — 0 errors, 0 warnings
-pnpm smoke   ran green twice against the real model; see §4
+pnpm smoke   passes against the real model — 4 runs, 32 candidates, 0 dropped
 ```
 
 Routes: `/`, `/review`, `ƒ /api/analysis`, `ƒ /api/answer`. **No route accepts a
@@ -218,7 +218,7 @@ Worth knowing, because each was a real defect rather than a missing feature.
 
 ## 4. What could not be verified
 
-### 4.1 No live end-to-end run of the finished product
+### 4.1 The pipeline is verified live; the screen is not
 
 `pnpm smoke` ran green **twice** during the build, both times through the real
 pipeline against the real model, before the result screen and the question box
@@ -237,17 +237,32 @@ quoting verbatim rather than paraphrasing. The only variance was the model's
 recall, which the script reports separately from a drop, because a clause the
 model never mentioned and a quote it could not reproduce are different problems.
 
-**I did not observe those runs myself.** They are reported by the agent that
-built the script. My own eleven verification attempts, spread over the last hour
-of the run, every one returned HTTP 429:
+For the last hour of the run every attempt of mine returned HTTP 429 from the
+shared Fireworks pool, so the two runs above were reported to me rather than
+observed. **That has since been resolved.** The rate limit cleared, and the
+pipeline has now been run twice more and watched directly:
 
-> `z-ai/glm-5.3-flash is temporarily rate-limited upstream` — Fireworks,
-> `limit_source: upstream_provider_shared_pool`
+- **Run C** — 8 candidates, 8 survived, **0 dropped**, 64.3s. Eight of nine
+  planted clauses; missed `arbitration-costs-split-equally`.
+- **Run D** — 7 candidates, 7 survived, **0 dropped**, 29.1s. Seven of nine;
+  missed `nonsolicit-18-months-customers-and-employees` and
+  `arbitration-costs-split-equally`. Exit 0, and every printed span sliced the
+  stored text back to the printed sentence exactly.
 
-The provider is pinned with `allow_fallbacks: false` as instructed, so there is
-nothing to fall back to. **This is the first thing to re-run when you sit down.**
-Nothing has shown a finished analysis on screen, because the browser has never
-received a successful response.
+**Across four runs, 32 candidates, the gate has dropped nothing.** The key
+itself is healthy: `GET /api/v1/key` returns 200, the account is not on the free
+tier, has no spend limit, and holds credit.
+
+**What is still unverified is the screen, not the pipeline.** No browser has
+rendered a finished analysis, because `pnpm smoke` exercises `analyse()`
+directly and never loads `/review`. See §4.3.
+
+The recall variance across runs is worth watching. Three different runs missed
+three different clauses, and `arbitration-costs-split-equally` has now been
+missed three times out of four — the cost-splitting sentence looks like the
+weakest one in the prompt's reach. That is a prompt-tuning job with a number
+attached, and it is recall rather than a citation failure: no run has ever shown
+the reader a sentence that was not in their document.
 
 ### 4.2 Supabase: written, never run
 
@@ -283,11 +298,12 @@ in the analysis spec.
 ```bash
 pnpm install
 pnpm test                 # 410 tests, no key needed
-pnpm smoke                # the one that matters — see §4.1
+pnpm smoke                # green as of 2026-09-16 — see §4.1
 ```
 
-If `pnpm smoke` still returns 429, the shared Fireworks pool is the cause, not
-the code. Either add your own provider key at
+If `pnpm smoke` returns 429, the shared Fireworks pool is the cause and not the
+code — it was rate-limited for an hour during this build and cleared on its own.
+Either add your own provider key at
 `openrouter.ai/settings/integrations`, or change `OPENROUTER_MODEL` in
 `.env.local`. The provider pin lives in `src/lib/model/openrouter.ts`; no model
 id is written anywhere in `src/`, and a test walks the tree to keep it that way.
@@ -295,8 +311,9 @@ id is written anywhere in `src/`, and a test walks the tree to keep it that way.
 Then, in order:
 
 1. **`pnpm dev` and open `/review`.** Paste the adhesion fixture from
-   `tests/fixtures/adhesion-contract.txt`, set a state, run it. Nobody has seen
-   this work on screen (§4.1, §4.3).
+   `tests/fixtures/adhesion-contract.txt`, set a state, run it. The pipeline
+   behind that button is verified; the screen in front of it has never rendered
+   a real result (§4.1, §4.3).
 2. **Run the migration.** Create the Supabase project, put
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in
    `.env.local`, apply `supabase/migrations/20260916120000_red_lines.sql`, then
