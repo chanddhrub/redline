@@ -4,7 +4,8 @@ Unattended run, 2026-09-15 into 2026-09-16. Every ticket in the repository is
 done. Nothing is blocked.
 
 **Read §4 first if you read nothing else.** It lists what this build could not
-verify, including the fact that no browser has ever rendered a real result.
+verify. The biggest gap left is that the account has never run against a live
+database.
 
 ---
 
@@ -253,20 +254,23 @@ pipeline has now been run twice more and watched directly:
 itself is healthy: `GET /api/v1/key` returns 200, the account is not on the free
 tier, has no spend limit, and holds credit.
 
-**What is still unverified is the screen, not the pipeline.** No browser has
-rendered a finished analysis, because `pnpm smoke` exercises `analyse()`
-directly and never loads `/review`. See §4.3.
+**The screen has now rendered a real result** (2026-10-06, see §4.3), so that
+gap is closed. That was Run E: 8 flags, 8 summary claims, every one shown with a
+located span.
 
 The recall variance across runs is worth watching. Three different runs missed
 three different clauses, and `arbitration-costs-split-equally` has now been
-missed three times out of four — the cost-splitting sentence looks like the
-weakest one in the prompt's reach. That is a prompt-tuning job with a number
+missed four times out of five (Run E missed it too) — the cost-splitting
+sentence looks like the weakest one in the prompt's reach. In Run E the question
+box found it at once when asked "who pays for the arbitration?", so the model can
+read the sentence; it just does not think to flag it. That is a prompt-tuning job with a number
 attached, and it is recall rather than a citation failure: no run has ever shown
 the reader a sentence that was not in their document.
 
 ### 4.2 Supabase: written, never run
 
-No Supabase project exists. So: the SQL under `supabase/migrations/` has never
+A hosted project, `Redline`, now exists. On 2026-10-06 its `public` schema was
+still empty. So: the SQL under `supabase/migrations/` has never
 been executed, the row-level-security policies have never been enforced, no row
 has been written or read, and no magic link has been sent or redeemed. The
 store's three queries are the untested part by design — everything they *decide*
@@ -277,13 +281,41 @@ Verified instead: with both variables absent the app starts, `/review` returns
 up, so there is nowhere to keep your red lines." No sign-in control, no library,
 nothing pretending anyone is signed in.
 
-### 4.3 No browser was driven
+### 4.3 The browser, driven once
 
-No browser automation is installed and I was told not to add a dependency. Phone
-width, the travelling window's motion, `prefers-reduced-motion`, the focus
-outlines and the greyscale severity check were all confirmed by reading the code
-and the design spec, not by looking at a screen. **Somebody should look at this
-in a browser before it goes anywhere.**
+On 2026-10-06 `/review` was driven in real Chrome through the chrome-devtools
+MCP. That is a tool outside the repository, so no dependency was added. The
+steps: upload `tests/fixtures/adhesion-contract.txt` through the file input, set
+California, add the red line "I won't sign a non-compete longer than six
+months", then analyse.
+
+Seen working:
+
+- Intake read 8,182 characters and 58 sentences. The analyse button stayed
+  disabled until both the document and a state were given.
+- **Run E**: 8 summary claims and 8 flags (CR-1…4, HI-1…4), each with
+  `QUOTE LOCATED` and a character span. Selecting a flag windows the document on
+  its span. Governing law quoted (chars 6,693–6,844), with Texas against
+  California set side by side. The California layer was labelled "NOT FROM YOUR
+  DOCUMENT" and severity was unchanged. The coverage receipt and the not-reviewed
+  list were both present.
+- The question box. "Who pays for the arbitration?" was answered with §7.3
+  quoted at chars 6,309–6,501. "How many weeks of severance…?" was answered "YOUR
+  DOCUMENT DOES NOT ADDRESS THIS", with no invented answer.
+- No console errors or warnings across the whole run.
+- At a 375px mobile viewport there is no horizontal page scroll. The section nav
+  scrolls sideways on purpose (`overflow-x-auto`).
+
+Worth a look:
+
+- **Red-line promotion is looser than the words.** The model also claimed the
+  non-compete red line for CR-2, the 18-month *non-solicit* (§5.3), so it was
+  promoted under the reader's words "non-compete". The match is the model's
+  `claimedRedLineId`, not code. Whether a non-solicit "crosses" a non-compete
+  line is a product decision; if it should not, the fix belongs in the prompt.
+
+Still only read in code, not watched: the travelling window's motion,
+`prefers-reduced-motion`, the focus outlines and the greyscale severity check.
 
 ### 4.4 The recall number in PRD §4 T4 is not measured
 
@@ -310,11 +342,10 @@ id is written anywhere in `src/`, and a test walks the tree to keep it that way.
 
 Then, in order:
 
-1. **`pnpm dev` and open `/review`.** Paste the adhesion fixture from
-   `tests/fixtures/adhesion-contract.txt`, set a state, run it. The pipeline
-   behind that button is verified; the screen in front of it has never rendered
-   a real result (§4.1, §4.3).
-2. **Run the migration.** Create the Supabase project, put
+1. **Read §4.3** for what a real browser run showed, including the red-line
+   promotion question.
+2. **Run the migration.** The project `Redline` (us-east-2) exists and was still
+   empty on 2026-10-06. Put
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in
    `.env.local`, apply `supabase/migrations/20260916120000_red_lines.sql`, then
    sign in and check that a red line survives a sign-out (§4.2).
