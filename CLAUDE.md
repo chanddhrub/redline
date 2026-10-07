@@ -31,6 +31,8 @@ do not route around it.
 - pnpm. Next.js App Router, TypeScript, Tailwind, `src/`. `.scratch/` is
   tracked (issues live in the repo). Commit each coherent step to `main`.
 - Default model: `anthropic/claude-sonnet-5`.
+- Supabase is a hosted project; SQL in `supabase/migrations/` is applied by
+  hand, no CLI (ADR 0006). Log each run in `supabase/README.md`.
 
 ## Scope
 
@@ -44,17 +46,12 @@ citation is worthless when the text it points at was misread.
 
 ## Rules
 
-- Credentials live in `.env.local`, which is gitignored. Never commit a
-  secret: a key is public the moment it is pushed and has to be rotated.
+- Credentials live in `.env.local`, which is gitignored; `.env.example` lists
+  the names. Never commit a secret: a key is public the moment it is pushed
+  and has to be rotated.
 - State only what the document says. Where the text does not support a claim,
   the product does not make it — the summary, the severity ranking, the
   counter-offers and the question box alike. The one exception is the labelled
   enforceability layer (ADR 0005), which is never merged into a cited flag.
 - Ask before adding a dependency.
 - Keep this file to 60 lines. Pointers, not pasted contents.
-
-## Open decisions — ask, do not pick
-
-Undecided as of 2026-09-06. Stop and ask rather than picking a default.
-
-- Supabase local CLI with versioned migrations vs. a hosted project only.

@@ -33,6 +33,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 .env.local
+# Variable names only, no values — see the file's header.
+!.env.example
+
+# supabase CLI cache. The database is a hosted project (ADR 0006), not CLI-managed.
+supabase/.temp/
 
 # vercel
 .vercel
