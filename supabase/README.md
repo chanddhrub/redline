@@ -18,7 +18,7 @@ when you apply one.
 
 | Migration | Local / dev project | Production project |
 |---|---|---|
-| `20260916120000_red_lines.sql` | not applied | not applied |
+| `20260916120000_red_lines.sql` | applied 2026-10-09 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
 
 ## Setting up a project
 
