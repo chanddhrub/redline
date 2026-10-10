@@ -313,4 +313,4 @@ else
   warn "in the dashboard."
 fi
 
-summary
+finish
