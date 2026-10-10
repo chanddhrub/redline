@@ -1,7 +1,8 @@
 # Supabase
 
 The database is a hosted Supabase project, with no CLI (ADR 0006). The SQL
-lives here and is applied by hand in the dashboard's SQL editor.
+lives here and is applied through the Supabase MCP's `apply_migration`, one
+file at a time in name order, using the file's name as the migration name.
 
 It holds one table, `red_lines`, and nothing else. No document text and no
 saved library: see the header of the migration for why.
@@ -13,8 +14,8 @@ order. Each is written to be safe to run twice (`if not exists`,
 `drop policy if exists`). Never edit one that has been applied anywhere; add a
 new file instead.
 
-Nothing records which files a project has run, so this table does. Add a row
-when you apply one.
+Each project's migration history in Supabase shows what has run there; this
+table shows every project in one place. Add a row when you apply one.
 
 | Migration | Local / dev project | Production project |
 |---|---|---|
