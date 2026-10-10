@@ -20,6 +20,7 @@ table shows every project in one place. Add a row when you apply one.
 | Migration | Local / dev project | Production project |
 |---|---|---|
 | `20260916120000_red_lines.sql` | applied 2026-10-09 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
+| `20261009120000_pin_touch_search_path.sql` | applied 2026-10-09 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
 
 ## Setting up a project
 

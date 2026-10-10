@@ -188,15 +188,16 @@ TOTAL_STAGES=5
 # Redline keeps its credentials in .env.local, which is gitignored. Never .env.
 ENV_FILE=".env.local"
 
-MIGRATION="supabase/migrations/20260916120000_red_lines.sql"
+# Every migration, in name order (the glob sorts), which is the order they run.
+MIGRATIONS=(supabase/migrations/*.sql)
 
-# copy_file_to_clipboard PATH — best effort, so the human can paste the
-# migration straight into the SQL editor instead of opening the file.
-copy_file_to_clipboard() {
-  if   command -v clip.exe >/dev/null 2>&1; then clip.exe < "$1"
-  elif command -v pbcopy   >/dev/null 2>&1; then pbcopy   < "$1"
-  elif command -v xclip    >/dev/null 2>&1; then xclip -selection clipboard < "$1"
-  elif command -v wl-copy  >/dev/null 2>&1; then wl-copy  < "$1"
+# copy_files_to_clipboard PATH... — best effort, so the human can paste the
+# migrations straight into the SQL editor instead of opening each file.
+copy_files_to_clipboard() {
+  if   command -v clip.exe >/dev/null 2>&1; then cat "$@" | clip.exe
+  elif command -v pbcopy   >/dev/null 2>&1; then cat "$@" | pbcopy
+  elif command -v xclip    >/dev/null 2>&1; then cat "$@" | xclip -selection clipboard
+  elif command -v wl-copy  >/dev/null 2>&1; then cat "$@" | wl-copy
   else return 1
   fi
 }
@@ -257,13 +258,15 @@ step "Then add a row for this project in supabase/README.md's ledger."
 say ""
 if ! confirm "Did it apply?"; then
   say ""
-  say "Fall back to the SQL editor. The migration is safe to run more than once,"
-  say "but a run made this way does not appear in the migration history."
-  if copy_file_to_clipboard "$MIGRATION"; then
-    printf '  %s✓ the migration is on your clipboard%s\n' "$GREEN" "$RESET"
+  say "Fall back to the SQL editor. The migrations are safe to run more than"
+  say "once, but a run made this way does not appear in the migration history."
+  if copy_files_to_clipboard "${MIGRATIONS[@]}"; then
+    printf '  %s✓ all %s migrations are on your clipboard, in order%s\n' \
+      "$GREEN" "${#MIGRATIONS[@]}" "$RESET"
   else
-    note "Couldn't reach a clipboard. Open this file and copy it by hand:"
-    note "  $MIGRATION"
+    note "Couldn't reach a clipboard. Open these files and copy them by hand,"
+    note "in this order:"
+    for m in "${MIGRATIONS[@]}"; do note "  $m"; done
   fi
   open_url "https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new"
   step "Paste it into the SQL editor."
