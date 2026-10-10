@@ -248,25 +248,34 @@ write_env NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 # ── 3 ─────────────────────────────────────────────────────────────────────
 stage "Create the table"
 say "One table, red_lines, with row level security on and owner-only policies."
-say "The migration is written to be safe to run more than once."
-if copy_file_to_clipboard "$MIGRATION"; then
+say "Migrations go through the Supabase MCP server (ADR 0006), so Supabase"
+say "records the run in the project's migration history."
+step "In Claude Code, with the supabase MCP connected (check with /mcp), ask:"
+note "  Apply every file in supabase/migrations to the project, one at a time,"
+note "  in filename order, using apply_migration with each file's name."
+step "Then add a row for this project in supabase/README.md's ledger."
+say ""
+if ! confirm "Did it apply?"; then
   say ""
-  printf '  %s✓ the migration is on your clipboard%s\n' "$GREEN" "$RESET"
-else
-  say ""
-  note "Couldn't reach a clipboard. Open this file and copy it by hand:"
-  note "  $MIGRATION"
+  say "Fall back to the SQL editor. The migration is safe to run more than once,"
+  say "but a run made this way does not appear in the migration history."
+  if copy_file_to_clipboard "$MIGRATION"; then
+    printf '  %s✓ the migration is on your clipboard%s\n' "$GREEN" "$RESET"
+  else
+    note "Couldn't reach a clipboard. Open this file and copy it by hand:"
+    note "  $MIGRATION"
+  fi
+  open_url "https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new"
+  step "Paste it into the SQL editor."
+  step "Click Run (or press Ctrl+Enter)."
+  step "You want 'Success. No rows returned'."
+  pause "Press Enter once it has run"
 fi
-open_url "https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/sql/new"
-step "Paste it into the SQL editor."
-step "Click Run (or press Ctrl+Enter)."
-step "You want 'Success. No rows returned'."
-pause "Press Enter once it has run"
 
 open_url "https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/editor"
 step "Check that a red_lines table is now listed in the table editor."
 if ! confirm "Is red_lines there?"; then
-  warn "Stop here and read the SQL editor's error before going on."
+  warn "Stop here and read the error from apply_migration or the SQL editor."
   warn "Nothing after this will work without the table."
   exit 1
 fi

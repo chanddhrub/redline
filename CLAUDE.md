@@ -31,8 +31,9 @@ do not route around it.
 - pnpm. Next.js App Router, TypeScript, Tailwind, `src/`. `.scratch/` is
   tracked (issues live in the repo). Commit each coherent step to `main`.
 - Default model: `anthropic/claude-sonnet-5`.
-- Supabase is a hosted project; SQL in `supabase/migrations/` is applied by
-  hand, no CLI (ADR 0006). Log each run in `supabase/README.md`.
+- Supabase is a hosted project; SQL in `supabase/migrations/` is applied
+  through the Supabase MCP, no CLI (ADR 0006). Log each run in
+  `supabase/README.md`.
 
 ## Scope
 
