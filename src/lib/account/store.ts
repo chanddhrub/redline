@@ -10,8 +10,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RedLine } from "@/lib/intake/analysis-request";
 import { redLinesFrom, rowsFor } from "./red-lines";
+import {
+  KEPT_DOCUMENT_COLUMNS,
+  keptDocumentFrom,
+  rowFor,
+  type DocumentSnapshot,
+  type KeptDocument,
+} from "./kept-document";
 
 export const RED_LINES_TABLE = "red_lines";
+export const KEPT_DOCUMENTS_TABLE = "kept_documents";
 
 export interface RedLineStore {
   load(): Promise<RedLine[]>;
@@ -78,6 +86,49 @@ export function supabaseRedLineStore(
           .in("id", gone);
         if (removed) throw new Error(removed.message);
       }
+    },
+  };
+}
+
+export interface KeptDocumentStore {
+  /** Nothing kept is `null`. Throws if it could not be read, which is not the
+   *  same thing: an unreachable row must never be taken for an empty one. */
+  load(): Promise<KeptDocument | null>;
+  save(snapshot: DocumentSnapshot): Promise<void>;
+  remove(): Promise<void>;
+}
+
+export function supabaseKeptDocumentStore(
+  client: SupabaseClient,
+  owner: string,
+): KeptDocumentStore {
+  const table = () => client.from(KEPT_DOCUMENTS_TABLE);
+
+  return {
+    async load() {
+      const { data, error } = await table()
+        .select(KEPT_DOCUMENT_COLUMNS.join(", "))
+        .eq("owner", owner)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) return null;
+      const kept = await keptDocumentFrom(data);
+      if (!kept) throw new Error("The kept document could not be read.");
+      return kept;
+    },
+
+    async save(snapshot) {
+      // One row per reader, so keeping a document replaces the last one. The
+      // primary key is what makes this "the last document" and not a library.
+      const { error } = await table().upsert(rowFor(owner, snapshot), {
+        onConflict: "owner",
+      });
+      if (error) throw new Error(error.message);
+    },
+
+    async remove() {
+      const { error } = await table().delete().eq("owner", owner);
+      if (error) throw new Error(error.message);
     },
   };
 }

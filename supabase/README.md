@@ -4,8 +4,10 @@ The database is a hosted Supabase project, with no CLI (ADR 0006). The SQL
 lives here and is applied through the Supabase MCP's `apply_migration`, one
 file at a time in name order, using the file's name as the migration name.
 
-It holds one table, `red_lines`, and nothing else. No document text and no
-saved library: see the header of the migration for why.
+It holds two tables. `red_lines` keeps a reader's red lines. `kept_documents`
+keeps at most one document per reader, and only if they choose to: its text,
+analysis and questions, never the original file (ADR 0007). There is no saved
+library: see the header of that migration for why.
 
 ## Migrations
 
@@ -21,6 +23,7 @@ table shows every project in one place. Add a row when you apply one.
 |---|---|---|
 | `20260916120000_red_lines.sql` | applied 2026-10-09 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
 | `20261009120000_pin_touch_search_path.sql` | applied 2026-10-09 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
+| `20261106120000_kept_documents.sql` | applied 2026-11-06 to `redline` (via the Supabase MCP's `apply_migration`) | not applied |
 
 ## Setting up a project
 

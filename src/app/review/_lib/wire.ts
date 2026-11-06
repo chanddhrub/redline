@@ -343,6 +343,13 @@ export function parseAnswer(value: unknown): WireAnswer | null {
   return { kind: "answered", text: value.text, citations };
 }
 
+/** A question and what came back. Only these are remembered: a failure is not
+ *  an answer, so it is never added to the thread. */
+export interface Exchange {
+  readonly question: string;
+  readonly answer: WireAnswer;
+}
+
 /* ── Severity, in three signals ──────────────────────────────────────── */
 
 /**

@@ -23,6 +23,7 @@ import {
   type UsState,
 } from "@/lib/intake/analysis-request";
 import { mergeRedLines, sameRedLines } from "@/lib/account/red-lines";
+import { snapshotKey, type DocumentSnapshot, type KeptDocument } from "@/lib/account/kept-document";
 import { serialWriter, type SerialWriter } from "@/lib/account/serial-writer";
 import { useAccount, type Account } from "@/lib/account/use-account";
 import {
@@ -36,12 +37,13 @@ import {
   parseAnalysis,
   parseAnswer,
   stampCodes,
+  type Exchange,
   type RunFailure,
   type WireAnalysis,
   type WireAnswer,
   type WireSpan,
 } from "../_lib/wire";
-import { AccountPanel, type Keeping } from "./account";
+import { AccountPanel, type KeptControls, type KeptStatus, type Keeping } from "./account";
 import { DocumentSheet } from "./sheet";
 import {
   AnswerPanel,
@@ -61,8 +63,14 @@ import {
 type Run =
   | { kind: "idle" }
   | { kind: "running"; reason: RunReason; startedAt: number }
-  | { kind: "done"; analysis: WireAnalysis }
+  /** `redLines` are the ones this analysis ranked against. */
+  | { kind: "done"; analysis: WireAnalysis; redLines: RedLine[] }
   | { kind: "failed"; failure: RunFailure };
+
+/** A document and everything kept with it, on its way to the account. `null`
+ *  deletes the row, and goes through the same queue so a delete cannot be
+ *  overtaken by a save that started first. */
+type KeptWrite = { key: string; snapshot: DocumentSnapshot | null };
 
 /**
  * Where a question has got to. The question the reader asked is carried on
@@ -159,6 +167,14 @@ function refusalCopy(refusal: Refusal): RefusalCopy {
   }
 }
 
+/** The window lands on the top-ranked flag without travelling: the first paint
+ *  jumps (DESIGN.md). On a clean document nothing is cropped, because there is
+ *  nothing to point at. */
+function firstSelection(analysis: WireAnalysis): Selection {
+  if (analysis.flags.length) return { kind: "flag", id: analysis.flags[0].flag.id };
+  return analysis.summary.claims.length ? { kind: "claim", index: 0 } : null;
+}
+
 /** The sample contract, assembled the way intake would store it. */
 const SAMPLE_TEXT = paragraphs
   .map((p) => p.runs.map((r) => r.text).join(" "))
@@ -174,6 +190,8 @@ export function Shell() {
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [question, setQuestion] = useState("");
   const [ask, setAsk] = useState<Ask>({ kind: "idle" });
+  /** Every question answered about this document, oldest first. */
+  const [thread, setThread] = useState<readonly Exchange[]>([]);
   const [pasting, setPasting] = useState(false);
   const [pasted, setPasted] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -199,6 +217,23 @@ export function Shell() {
   /** The reader whose lines are being read back right now, so two loads do
    *  not run at once. */
   const adopting = useRef<string | null>(null);
+  /** What the account holds of the document. Unset until it has been read. */
+  const [keptStatus, setKeptStatus] = useState<KeptStatus | null>(null);
+  /** Something to tell the reader about what came back or went. */
+  const [keptNote, setKeptNote] = useState<string | null>(null);
+  /** Bumped by "Try again", which is a write with no change behind it. */
+  const [keepRetry, setKeepRetry] = useState(0);
+  /** The queue a document's writes go through. */
+  const documentWriter = useRef<{ userId: string; writer: SerialWriter<KeptWrite> } | null>(null);
+  /** The contents of a document just read back, so opening it is not a write. */
+  const openedKey = useRef<string | null>(null);
+  /** Whether the document on screen is safe in the account. */
+  const keptOnScreen = useRef(false);
+  /** The run and thread on screen now, for code running after an await. */
+  const screen = useRef<{ run: Run; thread: readonly Exchange[] }>({
+    run: { kind: "idle" },
+    thread: [],
+  });
   /** Whose red lines are being written, and the queue they go through. */
   const redLineWriter = useRef<{ userId: string; writer: SerialWriter<RedLine[]> } | null>(null);
   /** Only the newest run may write a result. A reader who edits a red line
@@ -234,6 +269,7 @@ export function Shell() {
     // replaced, so it goes with the analysis rather than hanging over the new
     // document pointing at nothing.
     setAsk({ kind: "idle" });
+    setThread([]);
     askToken.current += 1;
     // Reading hands the thread back as it goes, so a long contract repaints
     // its way through instead of freezing the page.
@@ -266,6 +302,7 @@ export function Shell() {
     setSelected(null);
     runToken.current += 1;
     setAsk({ kind: "idle" });
+    setThread([]);
     askToken.current += 1;
     const result = await parseDocument(
       bytes.buffer.slice(0) as ArrayBuffer,
@@ -287,6 +324,7 @@ export function Shell() {
     setSelected(null);
     runToken.current += 1;
     setAsk({ kind: "idle" });
+    setThread([]);
     askToken.current += 1;
     if (fileRef.current) fileRef.current.value = "";
   }, []);
@@ -338,17 +376,8 @@ export function Shell() {
       return;
     }
 
-    setRun({ kind: "done", analysis });
-    // The window lands on the top-ranked flag without travelling: the first
-    // paint jumps (DESIGN.md). On a clean document nothing is cropped, because
-    // there is nothing to point at.
-    setSelected(
-      analysis.flags.length
-        ? { kind: "flag", id: analysis.flags[0].flag.id }
-        : analysis.summary.claims.length
-          ? { kind: "claim", index: 0 }
-          : null,
-    );
+    setRun({ kind: "done", analysis, redLines: state.redLines });
+    setSelected(firstSelection(analysis));
     },
     [],
   );
@@ -405,10 +434,12 @@ export function Shell() {
       }
 
       setAsk({ kind: "answered", question: asked, answer });
+      const turn = screen.current.thread.length;
+      setThread((earlier) => [...earlier, { question: asked, answer }]);
       // The window lands on the first sentence the answer rests on, the way it
       // lands on the top-ranked flag. On a refusal there is nothing to point
       // at, so the crop is left where the reader had it.
-      if (answer.kind === "answered") setSelected({ kind: "answer", index: 0 });
+      if (answer.kind === "answered") setSelected({ kind: "answer", turn, index: 0 });
     },
     [],
   );
@@ -496,7 +527,57 @@ export function Shell() {
   const latest = useRef(request);
   useEffect(() => {
     latest.current = request;
+    screen.current = { run, thread };
   });
+
+  /**
+   * Puts a kept document back on screen, whole. It has already been through
+   * `keptDocumentFrom`, so what is shown here has been checked against its text.
+   * A red line changed since means the stored ranking is out of date, and that
+   * re-runs it exactly as typing the line would have (PRD §3.3).
+   */
+  const openKept = useCallback(
+    (found: KeptDocument, lines: RedLine[]) => {
+      runToken.current += 1;
+      askToken.current += 1;
+      const next: AnalysisRequestState = {
+        document: found.document,
+        jurisdiction: found.jurisdiction ?? latest.current.jurisdiction,
+        redLines: lines,
+      };
+      openedKey.current = snapshotKey({
+        text: found.document.text,
+        origin: found.origin,
+        jurisdiction: next.jurisdiction,
+        analysis: found.analysis,
+        analysedRedLines: found.analysis ? found.analysedRedLines : [],
+        exchanges: found.exchanges,
+      });
+      setRequest(next);
+      setPhase({
+        kind: "ready",
+        filename: found.origin.filename,
+        source: found.origin.source,
+      });
+      setPasting(false);
+      setAsk({ kind: "idle" });
+      setThread(found.exchanges);
+      setKeptNote(
+        found.dropped
+          ? "Part of what you kept could not be checked against your document's text, so it is not shown. Run the analysis or ask the question again."
+          : null,
+      );
+      if (found.analysis) {
+        setRun({ kind: "done", analysis: found.analysis, redLines: found.analysedRedLines });
+        setSelected(firstSelection(found.analysis));
+        if (!sameRedLines(found.analysedRedLines, lines)) void analyse("red-lines", next);
+      } else {
+        setRun({ kind: "idle" });
+        setSelected(null);
+      }
+    },
+    [analyse],
+  );
 
   /** Who is signed in, if anyone, and how far their keeping has got. A sync
    *  belonging to somebody else is no sync at all. */
@@ -514,33 +595,63 @@ export function Shell() {
    *
    * It waits for the session restore. Merging against an empty first render
    * would drop whatever the reader had typed before the tab reloaded.
+   *
+   * A kept document comes back with them, unless the reader is already looking
+   * at a different one: that is theirs, so it stays and the panel offers the
+   * kept one instead.
    */
   useEffect(() => {
     const store = account.store;
-    if (!store || !signedInAs || !restored) return;
+    const documents = account.documents;
+    if (!store || !documents || !signedInAs || !restored) return;
     const userId = signedInAs;
     if (mine || adopting.current === userId) return;
 
     adopting.current = userId;
     let live = true;
     void (async () => {
-      let theirs: RedLine[];
-      try {
-        theirs = await store.load();
-      } catch {
+      const [lines, held] = await Promise.allSettled([store.load(), documents.load()]);
+      if (!live) return;
+
+      const found = held.status === "fulfilled" ? held.value : null;
+      setKeptStatus(
+        held.status === "rejected"
+          ? { kind: "unreachable" }
+          : found
+            ? {
+                kind: "kept",
+                text: found.document.text,
+                filename: found.origin.filename,
+                writing: "idle",
+              }
+            : { kind: "none" },
+      );
+
+      const current = latest.current;
+      let merged = current.redLines;
+      if (lines.status === "rejected") {
         // Their lines are unreachable, not gone. What is on screen stays, the
         // note says so, and nothing is written over what is kept on the
         // strength of a failed read.
-        if (live) {
-          setSync({ userId, adopted: false, keeping: { kind: "unreachable" } });
-        }
+        setSync({ userId, adopted: false, keeping: { kind: "unreachable" } });
+      } else {
+        kept.current = { userId, lines: lines.value };
+        setSync({ userId, adopted: true, keeping: { kind: "idle" } });
+        merged = mergeRedLines(lines.value, current.redLines);
+      }
+
+      // A reload has the text back from the tab but not the analysis, so the
+      // same text with nothing done to it yet is the same reader coming back.
+      const untouched =
+        screen.current.run.kind === "idle" && screen.current.thread.length === 0;
+      if (
+        found &&
+        (!current.document || (current.document.text === found.document.text && untouched))
+      ) {
+        openKept(found, merged);
         return;
       }
-      if (!live) return;
-      kept.current = { userId, lines: theirs };
-      setSync({ userId, adopted: true, keeping: { kind: "idle" } });
-      const current = latest.current;
-      const merged = mergeRedLines(theirs, current.redLines);
+
       if (!sameRedLines(merged, current.redLines)) {
         applyAndRerun({ ...current, redLines: merged }, "red-lines");
       }
@@ -553,7 +664,7 @@ export function Shell() {
     // `applyAndRerun` is rebuilt every render and this must run once per
     // reader; `latest` is what keeps the merge reading current state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account.store, signedInAs, mine, restored]);
+  }, [account.store, account.documents, signedInAs, mine, restored]);
 
   /**
    * And every change after that is kept.
@@ -597,6 +708,149 @@ export function Shell() {
   }, [account.store, signedInAs, adopted, request.redLines]);
 
   const doc: ParsedDocument | null = request.document;
+  const keptHere = keptStatus?.kind === "kept" && doc?.text === keptStatus.text;
+
+  /**
+   * Signing out ends everything tied to the reader, so signing in again in this
+   * tab reads their account afresh. Adjusted during render rather than in an
+   * effect, so no frame shows the last reader's state.
+   */
+  const [wasSignedIn, setWasSignedIn] = useState(false);
+  if (wasSignedIn !== Boolean(signedInAs)) {
+    setWasSignedIn(Boolean(signedInAs));
+    if (!signedInAs) {
+      setSync(null);
+      setKeptStatus(null);
+      setKeptNote(null);
+    }
+  }
+
+  /**
+   * A document safe in the account leaves the screen too: a shared machine
+   * should not go on showing it. One that failed to save stays, because this
+   * tab holds the only copy of the latest changes.
+   */
+  useEffect(() => {
+    if (signedInAs) return;
+    if (keptOnScreen.current) clear();
+    kept.current = null;
+    redLineWriter.current = null;
+    documentWriter.current = null;
+    openedKey.current = null;
+  }, [signedInAs, clear]);
+
+  useEffect(() => {
+    keptOnScreen.current =
+      keptHere && keptStatus?.kind === "kept" && keptStatus.writing !== "failed";
+  });
+
+  /** One queue per reader, shared by saving and deleting. */
+  const writerFor = useCallback(
+    (userId: string, documents: NonNullable<Account["documents"]>) => {
+      if (documentWriter.current?.userId !== userId) {
+        documentWriter.current = {
+          userId,
+          writer: serialWriter<KeptWrite>(
+            ({ snapshot }) => (snapshot ? documents.save(snapshot) : documents.remove()),
+            (event) =>
+              setKeptStatus((status) => {
+                if (status?.kind === "deleting") {
+                  if (event.kind === "failed") {
+                    return { kind: "delete-failed", filename: status.filename };
+                  }
+                  return event.kind === "saved" && event.value.snapshot === null
+                    ? { kind: "none" }
+                    : status;
+                }
+                return status?.kind === "kept" ? { ...status, writing: event.kind } : status;
+              }),
+          ),
+        };
+      }
+      return documentWriter.current.writer;
+    },
+    [],
+  );
+
+  /**
+   * A kept document stays current: a question asked, a new analysis, a changed
+   * state. Only the one the reader chose to keep is ever written. A run in
+   * progress waits, so the analysis is not saved as missing half way through.
+   */
+  useEffect(() => {
+    const documents = account.documents;
+    if (!documents || !signedInAs || !keptHere || !doc || !origin) return;
+    if (run.kind === "running") return;
+    const snapshot: DocumentSnapshot = {
+      text: doc.text,
+      origin,
+      jurisdiction: request.jurisdiction,
+      analysis: run.kind === "done" ? run.analysis : null,
+      analysedRedLines: run.kind === "done" ? run.redLines : [],
+      exchanges: [...thread],
+    };
+    const key = snapshotKey(snapshot);
+    const writer = writerFor(signedInAs, documents);
+    if ((writer.wanted()?.key ?? openedKey.current) === key) return;
+    writer.push({ key, snapshot });
+  }, [
+    account.documents,
+    signedInAs,
+    keptHere,
+    doc,
+    origin,
+    run,
+    request.jurisdiction,
+    thread,
+    keepRetry,
+    writerFor,
+  ]);
+
+  const keptControls: KeptControls = {
+    status: keptStatus ?? { kind: "checking" },
+    onScreen: phase.kind === "ready" ? phase.filename : null,
+    isThisOne: keptHere,
+    note: keptNote,
+    onKeep: () => {
+      if (!doc || phase.kind !== "ready") return;
+      openedKey.current = null;
+      setKeptNote(null);
+      setKeptStatus({
+        kind: "kept",
+        text: doc.text,
+        filename: phase.filename,
+        writing: "idle",
+      });
+    },
+    onOpen: () => {
+      const documents = account.documents;
+      if (!documents) return;
+      void documents
+        .load()
+        .then((found) => {
+          if (found) openKept(found, latest.current.redLines);
+          else setKeptStatus({ kind: "none" });
+        })
+        .catch(() => setKeptStatus({ kind: "unreachable" }));
+    },
+    onDelete: () => {
+      const documents = account.documents;
+      if (!documents || !signedInAs) return;
+      const filename =
+        keptStatus?.kind === "kept" || keptStatus?.kind === "delete-failed"
+          ? keptStatus.filename
+          : null;
+      setKeptStatus({ kind: "deleting", filename });
+      setKeptNote(
+        keptHere
+          ? "Deleted from your account. It stays on this screen until you close the tab."
+          : null,
+      );
+      writerFor(signedInAs, documents).push({ key: "", snapshot: null });
+    },
+    onRetry: () => setKeepRetry((n) => n + 1),
+  };
+
   const missing = whatIsMissing(request);
   const ready = isReady(request);
 
@@ -614,8 +868,9 @@ export function Shell() {
     // question before they run one, so this branch comes first and does not
     // depend on there being a result.
     if (selected.kind === "answer") {
-      if (ask.kind !== "answered" || ask.answer.kind !== "answered") return null;
-      const citation = ask.answer.citations[selected.index];
+      const answer = thread[selected.turn]?.answer;
+      if (answer?.kind !== "answered") return null;
+      const citation = answer.citations[selected.index];
       return citation ? { span: citation.span, stamp: "Answer" } : null;
     }
     if (!analysis) return null;
@@ -634,7 +889,7 @@ export function Shell() {
     return analysis.governingLaw
       ? { span: analysis.governingLaw.span, stamp: "Governing law" }
       : null;
-  }, [analysis, ask, selected]);
+  }, [analysis, thread, selected]);
 
   return (
     <div className="min-h-screen bg-ink text-paper lg:flex">
@@ -644,6 +899,7 @@ export function Shell() {
         sample={sample}
         jurisdiction={request.jurisdiction}
         signedIn={account.state.kind === "signed-in"}
+        documentKept={keptHere}
       />
 
       {/* Everything past the rail is an ink plate, and a 3px ink outline on
@@ -773,6 +1029,7 @@ export function Shell() {
             value={question}
             setValue={setQuestion}
             ask={ask}
+            thread={thread}
             onAsk={(text) => void askQuestion(text, request)}
             selected={selected}
             onSelect={setSelected}
@@ -781,6 +1038,7 @@ export function Shell() {
           <RedLines
             account={account}
             keeping={keeping}
+            kept={keptControls}
             lines={request.redLines}
             draft={draft}
             setDraft={setDraft}
@@ -816,12 +1074,14 @@ function Rail({
   sample,
   jurisdiction,
   signedIn,
+  documentKept,
 }: {
   ready: boolean;
   missing: string[];
   sample: boolean;
   jurisdiction: UsState | null;
   signedIn: boolean;
+  documentKept: boolean;
 }) {
   const marks = [
     { href: "#document", label: "Document" },
@@ -869,10 +1129,12 @@ function Rail({
               : `Still needed: ${missing.join(" and ")}`}
         </p>
         {/* True either way, and it has to stay true: signing in keeps the red
-            lines and nothing else, so the document's own line does not change
-            when somebody signs in. */}
+            lines. The document's own line only changes when the reader has
+            chosen to keep it (ADR 0007). */}
         <p className="label mt-1 text-ink/70">
-          Your document stays in this tab. Close it and it is gone.
+          {documentKept
+            ? "The text and analysis of this document are kept in your account."
+            : "Your document stays in this tab. Close it and it is gone."}
         </p>
         <p className="label mt-1 text-ink/70">
           {signedIn ? "Your red lines are kept." : "So are your red lines."}
@@ -951,7 +1213,8 @@ function Dropzone({
         </p>
         <p className="mx-auto mt-3 max-w-[52ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
           PDF, Word or plain text. Your file is read in this browser and never
-          uploaded. Only the text is kept, and only until you close the tab.
+          uploaded. Only the text is kept, and only until you close the tab,
+          unless you sign in and choose to keep it.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
@@ -1160,6 +1423,7 @@ function QuestionBox({
   value,
   setValue,
   ask,
+  thread,
   onAsk,
   selected,
   onSelect,
@@ -1168,6 +1432,7 @@ function QuestionBox({
   value: string;
   setValue: (v: string) => void;
   ask: Ask;
+  thread: readonly Exchange[];
   onAsk: (text: string) => void;
   selected: Selection;
   onSelect: (selection: Selection) => void;
@@ -1235,17 +1500,6 @@ function QuestionBox({
           </div>
         ) : null}
 
-        {ask.kind === "answered" ? (
-          <div className="mt-4">
-            <AnswerPanel
-              question={ask.question}
-              answer={ask.answer}
-              selected={selected}
-              onSelect={onSelect}
-            />
-          </div>
-        ) : null}
-
         {ask.kind === "failed" ? (
           <div className="mt-4">
             {/* The box is cleared on submit, so the retry carries the question
@@ -1258,6 +1512,22 @@ function QuestionBox({
             />
           </div>
         ) : null}
+
+        {/* Newest first, so the answer just asked for sits under the box. */}
+        {thread
+          .map((exchange, turn) => ({ exchange, turn }))
+          .reverse()
+          .map(({ exchange, turn }) => (
+            <div key={turn} className="mt-4">
+              <AnswerPanel
+                turn={turn}
+                question={exchange.question}
+                answer={exchange.answer}
+                selected={selected}
+                onSelect={onSelect}
+              />
+            </div>
+          ))}
       </div>
     </>
   );
@@ -1268,6 +1538,7 @@ function QuestionBox({
 function RedLines({
   account,
   keeping,
+  kept,
   lines,
   draft,
   setDraft,
@@ -1280,6 +1551,7 @@ function RedLines({
 }: {
   account: Account;
   keeping: Keeping;
+  kept: KeptControls;
   lines: { id: string; text: string }[];
   draft: string;
   setDraft: (v: string) => void;
@@ -1305,11 +1577,11 @@ function RedLines({
           A red line is something you have already decided you will not sign.
           Write it the way you would say it out loud.
         </p>
-        {/* Where these lines live, said next to where they are typed. The one
-            thing an account holds is this list, so the promise is made here
-            rather than at a door the reader never has to walk through. */}
+        {/* Where these lines live, said next to where they are typed. The
+            promise is made here rather than at a door the reader never has to
+            walk through. */}
         <div className="mt-4">
-          <AccountPanel account={account} keeping={keeping} />
+          <AccountPanel account={account} keeping={keeping} kept={kept} />
         </div>
         {/* Ticket criterion, not a nicety: a reader who expects a red line to
             filter the output has been misled by us. */}

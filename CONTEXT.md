@@ -62,6 +62,11 @@ labelled as not coming from the document and kept visually distinct from cited
 flags ([ADR 0005](docs/adr/0005-jurisdiction-is-a-labelled-second-layer.md)).
 The flag layer still obeys ADR 0001 in full.
 
+**Kept document** — the one document a signed-in reader has chosen to keep: its
+text, analysis and questions, never the original file. Keeping another replaces
+it ([ADR 0007](docs/adr/0007-a-reader-may-keep-their-last-document.md)). It is
+not a library.
+
 ## Deferred, not deleted
 
 **Library** — saved past documents. A retention feature; v1 has no acquisition

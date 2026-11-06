@@ -4,9 +4,9 @@
  * The account, on screen, sitting at the head of the red lines it keeps.
  *
  * It is here rather than in the rail because it is not a way in — the whole
- * product works signed out. It is one promise about one list, made in the
- * place that list is typed, so the reader can see what signing in buys and
- * what it does not.
+ * product works signed out. It is a promise made where the list is typed, so
+ * the reader can see what signing in buys and what it does not, and the choice
+ * to keep a document is made here for the same reason.
  *
  * Every state says plainly whether the lines are being kept. The state that
  * matters most is the one with no Supabase project behind it: it says the
@@ -16,6 +16,38 @@
 
 import { useState } from "react";
 import type { Account } from "@/lib/account/use-account";
+
+/**
+ * What the account holds of the reader's document (ADR 0007). Read before
+ * anything is offered: a row that could not be read is not an empty one, and
+ * must not be written over as if it were.
+ */
+export type KeptStatus =
+  | { kind: "checking" }
+  | { kind: "none" }
+  | {
+      kind: "kept";
+      text: string;
+      filename: string;
+      writing: "idle" | "saving" | "saved" | "failed";
+    }
+  | { kind: "deleting"; filename: string | null }
+  | { kind: "delete-failed"; filename: string | null }
+  | { kind: "unreachable" };
+
+export interface KeptControls {
+  status: KeptStatus;
+  /** The document on screen, if there is one. */
+  onScreen: string | null;
+  /** Whether the document on screen is the one the account holds. */
+  isThisOne: boolean;
+  /** Something the reader has to be told about what came back or went. */
+  note: string | null;
+  onKeep: () => void;
+  onOpen: () => void;
+  onDelete: () => void;
+  onRetry: () => void;
+}
 
 /** Whether the last change reached the account. The last two are the ones the
  *  reader has to see: their lines are on the screen and are not in their
@@ -31,9 +63,11 @@ export type Keeping =
 export function AccountPanel({
   account,
   keeping,
+  kept,
 }: {
   account: Account;
   keeping: Keeping;
+  kept: KeptControls;
 }) {
   const [email, setEmail] = useState("");
   const { state } = account;
@@ -73,9 +107,9 @@ export function AccountPanel({
             {/* The limit of the promise, said before they sign in rather than
                 discovered afterwards. */}
             <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-              Red lines are all an account holds. Your document is not stored,
-              here or anywhere. It is read in this browser and it stays
-              there.
+              An account keeps your red lines. It can keep a document&rsquo;s
+              text and analysis too, but only if you choose to. The original
+              file is never stored, here or anywhere.
             </p>
             <form
               className="flex flex-wrap gap-3 pt-1"
@@ -141,10 +175,7 @@ export function AccountPanel({
               Signed in as {state.email}. Your red lines are kept, and they are
               yours alone.
             </p>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
-              Nothing else is kept. Your document is read in this browser and
-              never uploaded or stored, and closing this tab ends it.
-            </p>
+            <KeptDocumentPanel kept={kept} />
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
               <button type="button" onClick={() => void account.signOut()} className="mark">
                 Sign out
@@ -163,6 +194,133 @@ export function AccountPanel({
           </p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The reader's choice about their document, made here because this is where
+ * they are told what an account holds. Nothing is kept until they press the
+ * button, and every state says what is and is not in their account.
+ */
+function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
+  const { status, onScreen, isThisOne, note } = kept;
+  const body = "max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80";
+  const held =
+    status.kind === "kept" || status.kind === "deleting" || status.kind === "delete-failed"
+      ? status.filename
+      : null;
+
+  return (
+    <div className="space-y-3 border-t-2 border-spot/40 pt-3">
+      <p className="label text-spot">Your document</p>
+
+      {status.kind === "checking" ? (
+        <p className="label text-paper/70" role="status">
+          Checking what your account holds
+        </p>
+      ) : null}
+
+      {status.kind === "unreachable" ? (
+        <p className={body} role="status">
+          What your account holds could not be read. Redline has not written
+          over it.
+        </p>
+      ) : null}
+
+      {status.kind === "deleting" ? (
+        <p className="label text-paper/70" role="status">
+          Deleting
+        </p>
+      ) : null}
+
+      {status.kind === "delete-failed" ? (
+        <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+          Deleting did not go through. It is still in your account.
+        </p>
+      ) : null}
+
+      {status.kind === "kept" && isThisOne ? (
+        <>
+          <p className={body}>
+            {status.filename} is kept in your account: its text, its analysis and
+            the questions you asked. It will be here when you sign in again. The
+            original file was never stored.
+          </p>
+          {status.writing === "saving" ? (
+            <p className="label text-paper/70" role="status">
+              Keeping
+            </p>
+          ) : null}
+          {status.writing === "saved" ? (
+            <p className="label text-paper/70" role="status">
+              Kept
+            </p>
+          ) : null}
+          {status.writing === "failed" ? (
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+              <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+                The latest change did not reach your account. It is still on
+                this screen.
+              </p>
+              <button type="button" onClick={kept.onRetry} className="mark">
+                Try again
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {status.kind === "kept" && !isThisOne ? (
+        <p className={body}>
+          Your account holds {status.filename}. Opening it replaces what is on
+          this screen.
+        </p>
+      ) : null}
+
+      {status.kind === "none" && !onScreen ? (
+        <p className={body}>
+          Read a document and you can choose to keep its text and analysis here.
+        </p>
+      ) : null}
+
+      {onScreen && !isThisOne && (status.kind === "none" || status.kind === "kept") ? (
+        <>
+          <p className={body}>
+            Save the text and analysis of {onScreen} to your account, with the
+            questions you ask about it, so they are here when you come back. The
+            original file is never stored.
+            {status.kind === "kept"
+              ? ` Your account holds one document, so this replaces ${status.filename}.`
+              : ""}
+          </p>
+          <button type="button" onClick={kept.onKeep} className="slug label slug-on-ink">
+            <span>Save the text and analysis</span>
+          </button>
+        </>
+      ) : null}
+
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        {status.kind === "kept" && !isThisOne ? (
+          <button type="button" onClick={kept.onOpen} className="mark">
+            Open {status.filename}
+          </button>
+        ) : null}
+        {status.kind === "kept" || status.kind === "delete-failed" || status.kind === "unreachable" ? (
+          <button type="button" onClick={kept.onDelete} className="mark">
+            {held ? `Delete ${held} from my account` : "Delete it from my account"}
+          </button>
+        ) : null}
+      </div>
+
+      {note ? (
+        <p
+          className="max-w-[62ch] border-2 border-paper/40 px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper"
+          role="status"
+        >
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }

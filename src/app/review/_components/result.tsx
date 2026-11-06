@@ -48,7 +48,7 @@ export type Selection =
   /** A sentence an answer rests on. Selectable exactly as a flag is, and it
    *  drives the same travelling window (`shell.tsx`), because it is the same
    *  kind of thing: a located sentence in the reader's own text. */
-  | { kind: "answer"; index: number }
+  | { kind: "answer"; turn: number; index: number }
   | null;
 
 /* ── Shared material ─────────────────────────────────────────────────── */
@@ -660,11 +660,14 @@ function NotAddressed() {
  * way selecting a flag does. The answer is checked the way a flag is checked.
  */
 export function AnswerPanel({
+  turn,
   question,
   answer,
   selected,
   onSelect,
 }: {
+  /** Which exchange in the thread this is. */
+  turn: number;
   question: string;
   answer: WireAnswer;
   selected: Selection;
@@ -697,13 +700,16 @@ export function AnswerPanel({
           </p>
           <ul className="space-y-2 px-3 pb-3">
             {answer.citations.map((citation, index) => {
-              const active = selected?.kind === "answer" && selected.index === index;
+              const active =
+                selected?.kind === "answer" &&
+                selected.turn === turn &&
+                selected.index === index;
               return (
                 <li key={index}>
                   <button
                     type="button"
                     aria-pressed={active}
-                    onClick={() => onSelect({ kind: "answer", index })}
+                    onClick={() => onSelect({ kind: "answer", turn, index })}
                     className="block w-full text-left"
                   >
                     <CitedPanel

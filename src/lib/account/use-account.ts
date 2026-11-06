@@ -8,15 +8,20 @@
  * Supabase project behind it and is a surface rather than a hidden control.
  *
  * Nothing here has a pretend mode. There is no flag that produces a signed-in
- * reader without a session, because the only thing sign-in buys is that red
- * lines are kept, and a reader who believes they are kept when they are not
- * has been lied to about the one thing.
+ * reader without a session, because what sign-in buys is that things are kept,
+ * and a reader who believes they are kept when they are not has been lied to
+ * about the one thing.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { accountClient } from "./client";
-import { supabaseRedLineStore, type RedLineStore } from "./store";
+import {
+  supabaseKeptDocumentStore,
+  supabaseRedLineStore,
+  type KeptDocumentStore,
+  type RedLineStore,
+} from "./store";
 
 export type AccountState =
   /** No project is configured for this build. Sign-in is not on offer. */
@@ -34,9 +39,11 @@ export interface Account {
    *  raw message from the service. */
   trouble: string | null;
   sending: boolean;
-  /** Present exactly when somebody is signed in. The one thing an account
-   *  buys. */
+  /** Present exactly when somebody is signed in. */
   store: RedLineStore | null;
+  /** The one document a reader may choose to keep (ADR 0007). Present exactly
+   *  when somebody is signed in. */
+  documents: KeptDocumentStore | null;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -121,12 +128,17 @@ export function useAccount(): Account {
     () => (client && userId ? supabaseRedLineStore(client, userId) : null),
     [client, userId],
   );
+  const documents = useMemo(
+    () => (client && userId ? supabaseKeptDocumentStore(client, userId) : null),
+    [client, userId],
+  );
 
   return {
     state,
     trouble,
     sending,
     store,
+    documents,
     signIn,
     signOut,
   };
@@ -189,7 +201,7 @@ function clearAuthParams() {
 
 function troubleWith(error: { message: string; status?: number }): string {
   if (error.status === 429) {
-    return "That is several links in a short time. Wait a minute, then ask again.";
+    return "That is too many links in a short time. Try again later: it can take up to an hour.";
   }
   if (/email/i.test(error.message) && /invalid/i.test(error.message)) {
     return "That address does not look like an address. Check it and try again.";
