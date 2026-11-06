@@ -23,6 +23,7 @@ import {
   type UsState,
 } from "@/lib/intake/analysis-request";
 import { mergeRedLines, sameRedLines } from "@/lib/account/red-lines";
+import { serialWriter, type SerialWriter } from "@/lib/account/serial-writer";
 import { useAccount, type Account } from "@/lib/account/use-account";
 import {
   parseDocument,
@@ -198,6 +199,8 @@ export function Shell() {
   /** The reader whose lines are being read back right now, so two loads do
    *  not run at once. */
   const adopting = useRef<string | null>(null);
+  /** Whose red lines are being written, and the queue they go through. */
+  const redLineWriter = useRef<{ userId: string; writer: SerialWriter<RedLine[]> } | null>(null);
   /** Only the newest run may write a result. A reader who edits a red line
    *  twice must not be shown the first run's answer because it came back
    *  second. */
@@ -559,37 +562,39 @@ export function Shell() {
    * an edit — and only once their kept lines have been read, so a first
    * sitting cannot overwrite what is stored with whatever happens to be on
    * screen.
+   *
+   * This depends on `adopted`, never on the sync object. A write updates that
+   * object, so depending on it makes every write start the next one. Writes
+   * queue in the writer rather than here, so a change made during a write
+   * cannot start a second one.
    */
+  const adopted = mine?.adopted ?? false;
   useEffect(() => {
     const store = account.store;
-    if (!store || !signedInAs || !mine?.adopted) return;
+    if (!store || !signedInAs || !adopted) return;
     const held = kept.current;
     if (held?.userId !== signedInAs) return;
+    const userId = signedInAs;
+    if (redLineWriter.current?.userId !== userId) {
+      redLineWriter.current = {
+        userId,
+        writer: serialWriter<RedLine[]>(
+          (lines) => store.save(lines),
+          (event) => {
+            if (event.kind === "saved") kept.current = { userId, lines: event.value };
+            // A failure is said on screen rather than swallowed: the line is in
+            // front of them and not in their account, and only they can decide
+            // what to do about that.
+            setSync({ userId, adopted: true, keeping: { kind: event.kind } });
+          },
+        ),
+      };
+    }
+    const { writer } = redLineWriter.current;
     const lines = request.redLines;
-    if (sameRedLines(held.lines, lines)) return;
-
-    let live = true;
-    setSync({ userId: signedInAs, adopted: true, keeping: { kind: "saving" } });
-    store
-      .save(lines)
-      .then(() => {
-        kept.current = { userId: signedInAs, lines };
-        if (live) {
-          setSync({ userId: signedInAs, adopted: true, keeping: { kind: "saved" } });
-        }
-      })
-      .catch(() => {
-        // Said on screen rather than swallowed: the line is in front of them
-        // and not in their account, and only they can decide what to do about
-        // that.
-        if (live) {
-          setSync({ userId: signedInAs, adopted: true, keeping: { kind: "failed" } });
-        }
-      });
-    return () => {
-      live = false;
-    };
-  }, [account.store, signedInAs, mine, request.redLines]);
+    if (sameRedLines(writer.wanted() ?? held.lines, lines)) return;
+    writer.push(lines);
+  }, [account.store, signedInAs, adopted, request.redLines]);
 
   const doc: ParsedDocument | null = request.document;
   const missing = whatIsMissing(request);

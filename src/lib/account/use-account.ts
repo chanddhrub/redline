@@ -114,12 +114,12 @@ export function useAccount(): Account {
     setState({ kind: "signed-out" });
   }, [client]);
 
+  // Keyed on the reader, not on the state object: a refreshed token produces a
+  // new state for the same person, and that is not a new store.
+  const userId = state.kind === "signed-in" ? state.userId : null;
   const store = useMemo(
-    () =>
-      client && state.kind === "signed-in"
-        ? supabaseRedLineStore(client, state.userId)
-        : null,
-    [client, state],
+    () => (client && userId ? supabaseRedLineStore(client, userId) : null),
+    [client, userId],
   );
 
   return {
