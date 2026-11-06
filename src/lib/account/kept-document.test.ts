@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   KEPT_DOCUMENT_COLUMNS,
   keptDocumentFrom,
+  opensOverScreen,
   rowFor,
   snapshotKey,
   type DocumentSnapshot,
@@ -180,6 +181,24 @@ describe("what is believed on the way back", () => {
     expect(await keptDocumentFrom({ ...row, text: "   " })).toBeNull();
     expect(await keptDocumentFrom({ ...row, text: 7 })).toBeNull();
     expect(await keptDocumentFrom(null)).toBeNull();
+  });
+});
+
+describe("whether a kept document takes over the screen", () => {
+  it("opens over an empty screen", () => {
+    expect(opensOverScreen("kept", { text: null, untouched: true })).toBe(true);
+  });
+
+  it("opens over its own text after a reload", () => {
+    expect(opensOverScreen("kept", { text: "kept", untouched: true })).toBe(true);
+  });
+
+  it("leaves the same text alone once the reader has worked on it", () => {
+    expect(opensOverScreen("kept", { text: "kept", untouched: false })).toBe(false);
+  });
+
+  it("leaves a different document alone", () => {
+    expect(opensOverScreen("kept", { text: "other", untouched: true })).toBe(false);
   });
 });
 

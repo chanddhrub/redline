@@ -29,6 +29,11 @@ export type KeptStatus =
       kind: "kept";
       text: string;
       filename: string;
+      /** The reader opened this document or chose to keep it, and it has not
+       *  left the screen since. This, never matching text, is what lets a
+       *  change be written over the row: the same words on screen can be a
+       *  bare copy with none of the analysis the row holds. */
+      open: boolean;
       writing: "idle" | "saving" | "saved" | "failed";
     }
   | { kind: "deleting"; filename: string | null }
@@ -45,6 +50,8 @@ export interface KeptControls {
   note: string | null;
   onKeep: () => void;
   onOpen: () => void;
+  /** Reads the account again after a read that failed. */
+  onReread: () => void;
   onDelete: () => void;
   onRetry: () => void;
 }
@@ -304,6 +311,11 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
         {status.kind === "kept" && !isThisOne ? (
           <button type="button" onClick={kept.onOpen} className="mark">
             Open {status.filename}
+          </button>
+        ) : null}
+        {status.kind === "unreachable" ? (
+          <button type="button" onClick={kept.onReread} className="mark">
+            Try again
           </button>
         ) : null}
         {status.kind === "kept" || status.kind === "delete-failed" || status.kind === "unreachable" ? (

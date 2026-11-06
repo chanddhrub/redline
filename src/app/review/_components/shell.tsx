@@ -23,7 +23,13 @@ import {
   type UsState,
 } from "@/lib/intake/analysis-request";
 import { mergeRedLines, sameRedLines } from "@/lib/account/red-lines";
-import { snapshotKey, type DocumentSnapshot, type KeptDocument } from "@/lib/account/kept-document";
+import {
+  opensOverScreen,
+  snapshotKey,
+  type DocumentSnapshot,
+  type KeptDocument,
+} from "@/lib/account/kept-document";
+import { readAgain } from "@/lib/account/read-again";
 import { serialWriter, type SerialWriter } from "@/lib/account/serial-writer";
 import { useAccount, type Account } from "@/lib/account/use-account";
 import {
@@ -562,6 +568,13 @@ export function Shell() {
       setPasting(false);
       setAsk({ kind: "idle" });
       setThread(found.exchanges);
+      setKeptStatus({
+        kind: "kept",
+        text: found.document.text,
+        filename: found.origin.filename,
+        open: true,
+        writing: "idle",
+      });
       setKeptNote(
         found.dropped
           ? "Part of what you kept could not be checked against your document's text, so it is not shown. Run the analysis or ask the question again."
@@ -578,6 +591,12 @@ export function Shell() {
     },
     [analyse],
   );
+
+  /** What a kept document coming back would land on. */
+  const screenNow = () => ({
+    text: latest.current.document?.text ?? null,
+    untouched: screen.current.run.kind === "idle" && screen.current.thread.length === 0,
+  });
 
   /** Who is signed in, if anyone, and how far their keeping has got. A sync
    *  belonging to somebody else is no sync at all. */
@@ -610,7 +629,10 @@ export function Shell() {
     adopting.current = userId;
     let live = true;
     void (async () => {
-      const [lines, held] = await Promise.allSettled([store.load(), documents.load()]);
+      const [lines, held] = await Promise.allSettled([
+        readAgain(() => store.load()),
+        readAgain(() => documents.load()),
+      ]);
       if (!live) return;
 
       const found = held.status === "fulfilled" ? held.value : null;
@@ -622,6 +644,7 @@ export function Shell() {
                 kind: "kept",
                 text: found.document.text,
                 filename: found.origin.filename,
+                open: false,
                 writing: "idle",
               }
             : { kind: "none" },
@@ -640,14 +663,7 @@ export function Shell() {
         merged = mergeRedLines(lines.value, current.redLines);
       }
 
-      // A reload has the text back from the tab but not the analysis, so the
-      // same text with nothing done to it yet is the same reader coming back.
-      const untouched =
-        screen.current.run.kind === "idle" && screen.current.thread.length === 0;
-      if (
-        found &&
-        (!current.document || (current.document.text === found.document.text && untouched))
-      ) {
+      if (found && opensOverScreen(found.document.text, screenNow())) {
         openKept(found, merged);
         return;
       }
@@ -708,7 +724,14 @@ export function Shell() {
   }, [account.store, signedInAs, adopted, request.redLines]);
 
   const doc: ParsedDocument | null = request.document;
-  const keptHere = keptStatus?.kind === "kept" && doc?.text === keptStatus.text;
+  const keptHere =
+    keptStatus?.kind === "kept" && keptStatus.open && doc?.text === keptStatus.text;
+
+  // Once it leaves the screen it stays closed, even if the same text comes
+  // back: that copy has none of what the row holds, and must not replace it.
+  if (keptStatus?.kind === "kept" && keptStatus.open && doc?.text !== keptStatus.text) {
+    setKeptStatus({ ...keptStatus, open: false });
+  }
 
   /**
    * Signing out ends everything tied to the reader, so signing in again in this
@@ -819,6 +842,7 @@ export function Shell() {
         kind: "kept",
         text: doc.text,
         filename: phase.filename,
+        open: true,
         writing: "idle",
       });
     },
@@ -830,6 +854,27 @@ export function Shell() {
         .then((found) => {
           if (found) openKept(found, latest.current.redLines);
           else setKeptStatus({ kind: "none" });
+        })
+        .catch(() => setKeptStatus({ kind: "unreachable" }));
+    },
+    onReread: () => {
+      const documents = account.documents;
+      if (!documents) return;
+      setKeptStatus({ kind: "checking" });
+      void readAgain(() => documents.load())
+        .then((found) => {
+          if (!found) setKeptStatus({ kind: "none" });
+          else if (opensOverScreen(found.document.text, screenNow())) {
+            openKept(found, latest.current.redLines);
+          } else {
+            setKeptStatus({
+              kind: "kept",
+              text: found.document.text,
+              filename: found.origin.filename,
+              open: false,
+              writing: "idle",
+            });
+          }
         })
         .catch(() => setKeptStatus({ kind: "unreachable" }));
     },

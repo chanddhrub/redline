@@ -97,6 +97,20 @@ export interface KeptDocument {
   dropped: boolean;
 }
 
+/**
+ * Whether a kept document takes over the screen when it is read back.
+ *
+ * Only over nothing, or over the same text with nothing done to it yet, which
+ * is a reload: the tab has the text back and not the analysis. Anything else on
+ * the screen is the reader's own work, and it stays.
+ */
+export function opensOverScreen(
+  keptText: string,
+  screen: { text: string | null; untouched: boolean },
+): boolean {
+  return screen.text === null || (screen.text === keptText && screen.untouched);
+}
+
 function holds(text: string, citation: WireCitation): boolean {
   return text.slice(citation.span.start, citation.span.end) === citation.text;
 }
