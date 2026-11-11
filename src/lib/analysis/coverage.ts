@@ -52,7 +52,7 @@ export interface CoverageReceipt {
  * shown no flags does not read it as "safe to sign" (PRD §4 T6).
  */
 export const NOT_REVIEWED: readonly string[] = [
-  "Only the four clause types above. Nothing here looked at pay, hours, notice, severance, benefits or confidentiality, and a clause outside those four can still be the one that hurts you.",
+  "Anything outside the four clause types above. Nothing here looked at pay, hours, notice, severance, benefits or confidentiality, and a clause outside those four can still be the one that hurts you.",
   "Anything the document leaves out. A term that is missing has no sentence to quote, so nothing here can flag it. An offer letter that says nothing about severance reads the same as one that treats you well.",
   "Whether a court where you work would hold you to any of this. Nothing above answers that.",
   "Any schedule, exhibit or handbook this document refers to but does not contain.",
