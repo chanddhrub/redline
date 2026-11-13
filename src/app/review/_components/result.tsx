@@ -472,8 +472,9 @@ function Flags({
 /* ── The coverage receipt ────────────────────────────────────────────── */
 
 /**
- * On an ink plate: 2px cream border, cream header strip with ink type, rows
- * divided at 35% cream, the findings column in spot Label type.
+ * White, not cream: the receipt is Redline describing its own work, not the
+ * reader's words. Ruled rows, the finding for each clause type at the right,
+ * and what was not reviewed said in full underneath.
  */
 export function Receipt({ coverage }: { coverage: CoverageReceipt }) {
   return (

@@ -95,6 +95,42 @@ typography:
     fontWeight: 400
     lineHeight: 1.62
     letterSpacing: "normal"
+  report-hero:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2.5rem"
+    fontWeight: 700
+    lineHeight: 1.02
+    letterSpacing: "-0.03em"
+  report-hero-mid:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "3.5rem"
+    fontWeight: 700
+    lineHeight: 1.02
+    letterSpacing: "-0.03em"
+  report-hero-lg:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "4.5rem"
+    fontWeight: 700
+    lineHeight: 1.02
+    letterSpacing: "-0.03em"
+  report-close:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2rem"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-0.03em"
+  report-close-mid:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2.75rem"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-0.03em"
+  report-close-lg:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "3.5rem"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-0.03em"
   report-title:
     fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.375rem"
@@ -210,12 +246,13 @@ components:
 
 # Design System: Redline
 
-> **Two worlds, on purpose (2026-11-12).** The landing page keeps The Session
-> Sleeve described below. The review screen (`/review`) moved to **the report**
-> (direction A, chosen by the owner because the orange field read as too red
-> and the review screen as too busy). The report is scoped to `.calm` in
-> `globals.css`; its tokens are the `report-*` entries above. See
-> "The review screen: the report" at the end of this file.
+> **Superseded (2026-11-12).** The owner found the orange field too red and
+> the review screen too busy, and chose **the report** (direction A) for the
+> whole product: the landing page and `/review`. The Session Sleeve below is
+> kept as the record of what came before and why; it no longer describes what
+> ships. The live system is "The review screen: the report" at the end of
+> this file, scoped to `.calm` in `globals.css` and the `report-*` tokens
+> above. Anton and Archivo are no longer loaded.
 
 ## Overview
 
@@ -518,9 +555,9 @@ material. The photographic register exists in this system and is simply unfilled
 a later session should fill it with a real duotone raster rather than conclude the
 world has no imagery. -->
 
-## The review screen: the report
+## The report (live system: landing page and review screen)
 
-**Creative North Star: "A results report you can check."** The review screen
+**Creative North Star: "A results report you can check."** The product
 reads like a well-set lab report: graphite on a warm off-white, ruled rows,
 one row open at a time, and colour spent only where it carries meaning.
 
@@ -544,3 +581,7 @@ one row open at a time, and colour spent only where it carries meaning.
   the cited sentence. Findings are a table of one-line rows (code, clause,
   severity, source); opening a row shows the quote, the measures, and the
   counter-offer in place. Rows reflow on the column's width, not the screen's.
+- **Landing page.** The same world at a larger scale: a plain bold headline
+  (no rotation, no capitals), the sample inspector built from the same report
+  rows, the clean-document receipt on a `report-wash` band, and one graphite
+  closing band with a white button so the page ends anchored.

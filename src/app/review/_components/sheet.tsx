@@ -6,8 +6,8 @@
  * The contract's own words are rendered once and never moved, transformed or
  * animated. Selecting a finding does not repaginate anything: Redline's own
  * layer travels instead — two halftone veils close in from above and below,
- * a 2px ink bracket lands around the cited sentence, and a 7px spot tick marks
- * the crop in the left margin. Everything that moves belongs to us.
+ * a thin graphite bracket lands around the cited sentence, and a tick in the
+ * action colour marks the crop in the left margin. Everything that moves belongs to us.
  *
  * That is the whole reason the sentence is wrapped in a bare `<span>` carrying
  * no styling at all. The span exists to be measured. If it carried a
