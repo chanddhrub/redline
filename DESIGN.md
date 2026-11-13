@@ -8,6 +8,20 @@ colors:
   burnt: "#4A1200"
   tint: "#FF8A50"
   peach: "#FFC7A6"
+  report-ground: "#FBFAF7"
+  report-graphite: "#1F2328"
+  report-soft: "#565C64"
+  report-rule: "#D9DCE0"
+  report-field: "#A9AFB7"
+  report-wash: "#EEF1F4"
+  report-quote: "#F6F1E6"
+  report-act: "#25507A"
+  report-act-deep: "#1B3D5E"
+  report-crit: "#9A2B1E"
+  report-high: "#7A5300"
+  report-scroll: "#B9BEC5"
+  report-select: "#CFE0F0"
+  report-white: "#FFFFFF"
 typography:
   display:
     fontFamily: "Anton, ui-sans-serif, sans-serif"
@@ -81,6 +95,54 @@ typography:
     fontWeight: 400
     lineHeight: 1.62
     letterSpacing: "normal"
+  report-title:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.375rem"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "normal"
+  report-subhead:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 700
+    lineHeight: 1.3
+    letterSpacing: "normal"
+  report-row:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 600
+    lineHeight: 1.35
+    letterSpacing: "normal"
+  report-body:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.6
+    letterSpacing: "normal"
+  report-control:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: 1.4
+    letterSpacing: "normal"
+  report-small:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.45
+    letterSpacing: "normal"
+  report-micro:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 600
+    lineHeight: 1.4
+    letterSpacing: "normal"
+  report-step:
+    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 400
+    lineHeight: 1
+    letterSpacing: "normal"
 rounded:
   none: "0px"
 spacing:
@@ -147,6 +209,13 @@ components:
 ---
 
 # Design System: Redline
+
+> **Two worlds, on purpose (2026-11-12).** The landing page keeps The Session
+> Sleeve described below. The review screen (`/review`) moved to **the report**
+> (direction A, chosen by the owner because the orange field read as too red
+> and the review screen as too busy). The report is scoped to `.calm` in
+> `globals.css`; its tokens are the `report-*` entries above. See
+> "The review screen: the report" at the end of this file.
 
 ## Overview
 
@@ -448,3 +517,30 @@ available and a CSS approximation of a photograph was refused as imitation
 material. The photographic register exists in this system and is simply unfilled;
 a later session should fill it with a real duotone raster rather than conclude the
 world has no imagery. -->
+
+## The review screen: the report
+
+**Creative North Star: "A results report you can check."** The review screen
+reads like a well-set lab report: graphite on a warm off-white, ruled rows,
+one row open at a time, and colour spent only where it carries meaning.
+
+- **Ground and voice.** `report-ground` page, `report-graphite` text,
+  `report-soft` for secondary lines (6:1 on the wash). Public Sans at normal
+  case is Redline's voice here; no tracked capitals, no Anton.
+- **The document is still cream.** `report-quote` with Tinos is used only for
+  the reader's own words: the cited-sentence panel and the document sheet.
+  Anything not from the document (the second layer) sits on white with a
+  dashed rule and the halftone rail, never on cream.
+- **Severity.** A bar whose length is the signal (44px Critical, 22px High),
+  the spelled word, and a colour that repeats them (`report-crit`,
+  `report-high`). Greyscale keeps the first two.
+- **One action colour.** `report-act` for buttons and text actions; solid for
+  the primary action (Copy counter-offer, Analyse), outlined for the quiet one
+  (Show in document). Square corners, 1px rules throughout.
+- **Topology.** A step menu on the left (Your document, Findings, Ask the
+  document, Your red lines, Where you work) marks the section in view. One
+  main column holds the work. The document is open beside it while it is the
+  work; once findings exist it closes, and "Show in document" reopens it at
+  the cited sentence. Findings are a table of one-line rows (code, clause,
+  severity, source); opening a row shows the quote, the measures, and the
+  counter-offer in place. Rows reflow on the column's width, not the screen's.

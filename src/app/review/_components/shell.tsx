@@ -56,6 +56,7 @@ import {
   Failed,
   Result,
   Running,
+  ShowInDocument,
   type RunReason,
   type Selection,
 } from "./result";
@@ -202,6 +203,9 @@ export function Shell() {
   const [pasted, setPasted] = useState("");
   const [dragging, setDragging] = useState(false);
   const [restored, setRestored] = useState(false);
+  /** Whether the document panel is open once an analysis is on screen. Before
+   *  that the document is the work, so it is always shown. */
+  const [docOpen, setDocOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const account = useAccount();
   /**
@@ -936,40 +940,80 @@ export function Shell() {
       : null;
   }, [analysis, thread, selected]);
 
-  return (
-    <div className="min-h-screen bg-ink text-paper lg:flex">
-      <Rail
-        ready={ready}
-        missing={missing}
-        sample={sample}
-        jurisdiction={request.jurisdiction}
-        signedIn={account.state.kind === "signed-in"}
-        documentKept={keptHere}
-      />
+  /* Once there is an analysis, the findings are the work and the document is
+     one click away rather than always taking half the screen. Before that, the
+     document is what the reader is checking, so it stays open. */
+  const analysed = run.kind === "done";
+  const showDoc = !analysed || docOpen;
+  const showInDocument = () => {
+    setDocOpen(true);
+    // On a phone the document sits above the findings; take the reader to it.
+    // On a wide screen it is a sticky panel beside them and already in view.
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      requestAnimationFrame(() =>
+        document.getElementById("document")?.scrollIntoView({
+          block: "start",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        }),
+      );
+    }
+  };
 
-      {/* Everything past the rail is an ink plate, and a 3px ink outline on
-          an ink ground is an outline nobody can see. `.on-ink` switches the
-          focus outline to spot for the whole pane; globals.css hands ink back
-          inside the cream sheet, where spot would be the invisible one. */}
-      <main className="on-ink min-w-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        {/* ── The document. The fixed thing on the screen. ───────────── */}
+  const jurisdictionSection = (
+    <Jurisdiction
+      value={request.jurisdiction}
+      onChange={(v) => applyAndRerun(setJurisdiction(request, v), "state")}
+    />
+  );
+
+  return (
+    <ShowInDocument.Provider value={showInDocument}>
+      <div className="calm min-h-screen lg:flex">
+        <Rail
+          ready={ready}
+          missing={missing}
+          sample={sample}
+          jurisdiction={request.jurisdiction}
+          signedIn={account.state.kind === "signed-in"}
+          documentKept={keptHere}
+          onDocument={showInDocument}
+          stateLast={analysed}
+          filename={phase.kind === "ready" ? phase.filename : null}
+        />
+
+        <div
+          className={`flex min-w-0 flex-1 flex-col lg:grid ${
+            showDoc ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)]" : "lg:grid-cols-1"
+          }`}
+        >
+        {/* ── The document. Open while it is the work; a panel after. ── */}
+        {showDoc ? (
         <section
           id="document"
           aria-label="Your document"
-          className="min-w-0 scroll-mt-[4.75rem] border-b-2 border-spot lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r-2 lg:scroll-mt-0"
+          className="order-1 min-w-0 scroll-mt-[4.25rem] border-b border-rule bg-ground lg:order-2 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-l lg:scroll-mt-0"
         >
           <PaneHead
-            title={phase.kind === "idle" ? "Your document" : phase.kind === "ready" ? phase.filename : "Your document"}
+            title={phase.kind === "ready" ? phase.filename : "Your document"}
             note={
               phase.kind === "ready" && doc
-                ? `${doc.text.length.toLocaleString()} characters · ${doc.sentences.length} sentences · parsed in your browser`
-                : "Parsed in your browser. The file never leaves this machine."
+                ? `${doc.text.length.toLocaleString()} characters · ${doc.sentences.length} sentences · read in your browser`
+                : "Read in your browser. The file never leaves this machine."
             }
             action={
               phase.kind === "ready" ? (
-                <button type="button" onClick={clear} className="mark">
-                  Replace
-                </button>
+                <span className="flex gap-4">
+                  <button type="button" onClick={clear} className="mark">
+                    Replace
+                  </button>
+                  {analysed ? (
+                    <button type="button" onClick={() => setDocOpen(false)} className="mark">
+                      Hide document
+                    </button>
+                  ) : null}
+                </span>
               ) : null
             }
           />
@@ -988,7 +1032,7 @@ export function Shell() {
 
             {phase.kind === "idle" && pasting ? (
               <form
-                className="border-2 border-spot bg-ink"
+                className="border border-rule bg-ground"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const bytes = new TextEncoder().encode(pasted);
@@ -996,7 +1040,7 @@ export function Shell() {
                   setPasting(false);
                 }}
               >
-                <label htmlFor="paste" className="mark block border-b-2 border-spot px-3 py-2">
+                <label htmlFor="paste" className="mark block border-b border-rule px-3 py-2">
                   Paste the text of your document
                 </label>
                 <textarea
@@ -1004,11 +1048,11 @@ export function Shell() {
                   value={pasted}
                   onChange={(e) => setPasted(e.target.value)}
                   rows={12}
-                  className="document w-full resize-y bg-paper px-4 py-3 text-[0.9375rem] text-ink"
+                  className="document w-full resize-y bg-quote px-4 py-3 text-[0.9375rem] text-graphite"
                   placeholder="Paste here…"
                 />
-                <div className="flex flex-wrap gap-3 border-t-2 border-spot p-3">
-                  <button type="submit" className="slug label slug-on-ink">
+                <div className="flex flex-wrap gap-3 border-t border-rule p-3">
+                  <button type="submit" className="slug label slug-">
                     <span>Read this text</span>
                   </button>
                   <button
@@ -1048,13 +1092,14 @@ export function Shell() {
             ) : null}
           </div>
         </section>
+        ) : null}
 
         {/* ── Findings, questions, red lines: peers, never modals. ───── */}
-        <section className="min-w-0">
-          <Jurisdiction
-            value={request.jurisdiction}
-            onChange={(v) => applyAndRerun(setJurisdiction(request, v), "state")}
-          />
+        <main className="order-2 min-w-0 lg:order-1">
+          <div className="@container mx-auto max-w-[56rem] pb-16">
+          {/* Asked first, because nothing runs without it; once there are
+              findings it moves below them, set and out of the way. */}
+          {analysed ? null : jurisdictionSection}
 
           <Analysis
             run={run}
@@ -1105,9 +1150,12 @@ export function Shell() {
             onRemove={(id) => applyAndRerun(removeRedLine(request, id), "red-lines")}
             reruns={run.kind !== "idle"}
           />
-        </section>
-      </main>
-    </div>
+          {analysed ? jurisdictionSection : null}
+          </div>
+        </main>
+        </div>
+      </div>
+    </ShowInDocument.Provider>
   );
 }
 
@@ -1120,6 +1168,9 @@ function Rail({
   jurisdiction,
   signedIn,
   documentKept,
+  onDocument,
+  filename,
+  stateLast,
 }: {
   ready: boolean;
   missing: string[];
@@ -1127,34 +1178,61 @@ function Rail({
   jurisdiction: UsState | null;
   signedIn: boolean;
   documentKept: boolean;
+  /** Opens the document panel, which may be closed once there are findings. */
+  onDocument: () => void;
+  filename: string | null;
+  /** Once there are findings, where-you-work sits below them on the page, and
+   *  the menu follows the page. */
+  stateLast: boolean;
 }) {
-  const marks = [
-    { href: "#document", label: "Document" },
-    { href: "#findings", label: "Findings" },
-    { href: "#questions", label: "Questions" },
-    { href: "#redlines", label: "Red lines" },
-  ];
+  const steps = stateLast
+    ? [...STEPS.filter((step) => step.id !== "jurisdiction"), STEPS[1]]
+    : STEPS;
+  const current = useCurrentStep(steps.map((step) => step.id));
   return (
-    <div className="sticky top-0 z-20 flex items-center gap-4 border-b-2 border-ink bg-spot px-4 py-3 text-ink lg:h-screen lg:w-56 lg:flex-col lg:items-stretch lg:gap-6 lg:border-b-0 lg:border-r-2 lg:px-4 lg:py-5">
-      <Link href="/" className="display mark-ink shrink-0 border-2 border-ink px-2 py-1 text-xl">
-        Redline
-      </Link>
-      <nav className="flex min-w-0 flex-1 gap-4 overflow-x-auto lg:flex-col lg:gap-1 lg:overflow-visible">
-        {marks.map((m) => (
-          <a key={m.href} href={m.href} className="mark mark-ink shrink-0 px-1 py-0.5 lg:py-1">
-            {m.label}
-          </a>
-        ))}
+    <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-rule bg-ground px-4 py-2.5 lg:h-screen lg:w-60 lg:shrink-0 lg:flex-col lg:items-stretch lg:gap-0 lg:border-b-0 lg:border-r lg:px-0 lg:py-0">
+      <div className="min-w-0 shrink-0 lg:border-b lg:border-rule lg:px-5 lg:py-5">
+        <Link
+          href="/"
+          className="text-[1.0625rem] font-bold tracking-[-0.01em] text-graphite hover:text-act"
+        >
+          Redline
+        </Link>
+        {filename ? (
+          <p className="mt-0.5 hidden truncate text-[0.8125rem] text-soft lg:block">{filename}</p>
+        ) : null}
+      </div>
+      <nav aria-label="Steps" className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] lg:overflow-visible lg:py-3">
+        <ol className="flex gap-1 lg:flex-col lg:gap-0">
+          {steps.map((step, index) => (
+            <li key={step.id} className="shrink-0">
+              <a
+                href={`#${step.id}`}
+                aria-current={current === step.id ? "true" : undefined}
+                onClick={step.id === "document" ? onDocument : undefined}
+                className="step-link flex items-center gap-2.5 whitespace-nowrap px-2.5 py-1.5 text-[0.875rem] text-soft transition-colors duration-150 hover:text-graphite lg:px-5 lg:py-2.5 lg:text-[0.9375rem]"
+              >
+                <span
+                  className="step-dot tabular hidden h-5 w-5 shrink-0 place-items-center rounded-full border border-rule text-[0.6875rem] lg:grid"
+                  aria-hidden="true"
+                >
+                  {index + 1}
+                </span>
+                {step.label}
+              </a>
+            </li>
+          ))}
+        </ol>
       </nav>
       {/* The state in use, wherever the reader has scrolled to: the
           enforceability layer is keyed to it, so it is never out of sight. */}
       <a
         href="#jurisdiction"
-        className="mark mark-ink shrink-0 whitespace-nowrap border-2 border-ink px-2 py-1 lg:mt-auto lg:whitespace-normal"
+        className="shrink-0 whitespace-nowrap text-[0.8125rem] font-semibold text-graphite hover:text-act lg:mx-5 lg:mb-3 lg:mt-auto"
       >
         {jurisdiction ? (
           <>
-            <span className="hidden lg:inline">Working in </span>
+            <span className="hidden font-normal text-soft lg:inline">Working in </span>
             {jurisdiction}
           </>
         ) : (
@@ -1163,10 +1241,10 @@ function Rail({
       </a>
       {/* Reserved: the saved library takes the position below this rule when
           it arrives. Deferred by ADR 0002 — nothing is designed or shown. */}
-      <div className="hidden lg:block">
+      <div className="hidden space-y-1.5 border-t border-rule px-5 py-4 text-[0.8125rem] leading-snug text-soft lg:block">
         {/* The reason a control is not available yet, kept in sight from
             wherever the reader has scrolled to. */}
-        <p className="label text-burnt">
+        <p className="font-semibold text-graphite">
           {sample
             ? "Sample loaded"
             : ready
@@ -1176,17 +1254,64 @@ function Rail({
         {/* True either way, and it has to stay true: signing in keeps the red
             lines. The document's own line only changes when the reader has
             chosen to keep it (ADR 0007). */}
-        <p className="label mt-1 text-ink/70">
+        <p>
           {documentKept
             ? "The text and analysis of this document are kept in your account."
             : "Your document stays in this tab. Close it and it is gone."}
         </p>
-        <p className="label mt-1 text-ink/70">
-          {signedIn ? "Your red lines are kept." : "So are your red lines."}
-        </p>
+        <p>{signedIn ? "Your red lines are kept." : "So are your red lines."}</p>
+        <p>Not legal advice.</p>
       </div>
     </div>
   );
+}
+
+const STEPS = [
+  { id: "document", label: "Your document" },
+  { id: "jurisdiction", label: "Where you work" },
+  { id: "findings", label: "Findings" },
+  { id: "questions", label: "Ask the document" },
+  { id: "redlines", label: "Your red lines" },
+] as const;
+
+/**
+ * The step whose section the reader is in: the last one whose top has passed
+ * a line a third of the way down the screen. Recomputed as they scroll, so the
+ * menu always says where they are.
+ */
+function useCurrentStep(ids: readonly string[]): string | null {
+  const [current, setCurrent] = useState<string | null>(null);
+  const key = ids.join(",");
+  useEffect(() => {
+    const list = key.split(",");
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const line = window.innerHeight / 3;
+      let found: string | null = null;
+      for (const id of list) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        // On a wide screen the document is a sticky panel beside the findings,
+        // so its top never passes the line; it counts only where it scrolls.
+        if (id === "document" && getComputedStyle(el).position === "sticky") continue;
+        if (el.getBoundingClientRect().top <= line) found = id;
+      }
+      setCurrent(found ?? list.find((id) => document.getElementById(id)) ?? null);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [key]);
+  return current;
 }
 
 function PaneHead({
@@ -1199,25 +1324,27 @@ function PaneHead({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-spot px-4 py-3 sm:px-6">
-      <h2 className="label text-spot">{title}</h2>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-3 sm:px-6">
+      <h2 className="min-w-0 truncate text-[0.9375rem] font-semibold text-graphite">{title}</h2>
       {action}
-      {note ? <p className="label w-full text-paper/70">{note}</p> : null}
+      {note ? <p className="tabular w-full text-[0.8125rem] text-soft">{note}</p> : null}
     </div>
   );
 }
 
+/** A section of the main column: a real heading and one plain line under it
+ *  saying what the section is for. More space above than below. */
 function SectionHead({ id, title, note }: { id: string; title: string; note?: string }) {
   return (
-    <div
-      id={id}
-      className="scroll-mt-[4.75rem] border-b-2 border-spot px-4 py-3 sm:px-6 lg:scroll-mt-4"
-    >
-      <h2 className="label text-spot">{title}</h2>
-      {note ? <p className="label mt-1 text-paper/70">{note}</p> : null}
+    <div id={id} className="scroll-mt-[4.25rem] px-4 pt-10 sm:px-8 lg:scroll-mt-6">
+      <h2 className="text-[1.375rem] font-bold leading-tight tracking-[-0.01em] text-graphite">
+        {title}
+      </h2>
+      {note ? <p className="mt-1 max-w-[62ch] text-[0.9375rem] text-soft">{note}</p> : null}
     </div>
   );
 }
+
 
 /* ── Intake ──────────────────────────────────────────────────────────── */
 
@@ -1249,14 +1376,14 @@ function Dropzone({
           setDragging(false);
           onFiles(e.dataTransfer.files);
         }}
-        className={`border-2 border-dashed px-5 py-12 text-center transition-colors duration-200 sm:py-16 ${
-          dragging ? "border-spot bg-spot/15" : "border-paper/45"
+        className={`border border-dashed px-5 py-12 text-center transition-colors duration-200 sm:py-16 ${
+          dragging ? "border-act bg-wash" : "border-[#a9afb7] bg-white"
         }`}
       >
-        <p className="display text-2xl text-paper sm:text-3xl">
+        <p className="display text-2xl text-graphite sm:text-3xl">
           Drop your offer letter here
         </p>
-        <p className="mx-auto mt-3 max-w-[52ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+        <p className="mx-auto mt-3 max-w-[52ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
           PDF, Word or plain text. Your file is read in this browser and never
           uploaded. Only the text is kept, and only until you close the tab,
           unless you sign in and choose to keep it.
@@ -1265,7 +1392,7 @@ function Dropzone({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="slug label slug-on-ink"
+            className="slug label slug-"
           >
             <span>Choose a file</span>
           </button>
@@ -1287,7 +1414,7 @@ function Dropzone({
         />
       </div>
 
-      <p className="mt-4 font-voice text-sm leading-relaxed text-paper/70">
+      <p className="mt-4 font-voice text-sm leading-relaxed text-soft">
         Want to see what comes back first?{" "}
         <button
           type="button"
@@ -1308,22 +1435,22 @@ function Dropzone({
 function Reading({ filename, progress }: { filename: string; progress: number }) {
   const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
   return (
-    <div className="border-2 border-spot px-4 py-4">
-      <p className="label text-spot">Reading {filename}</p>
+    <div className="border border-rule px-4 py-4">
+      <p className="label text-graphite">Reading {filename}</p>
       <div
         role="progressbar"
         aria-label={`Reading ${filename}`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
-        className="mt-3 h-3 w-full border-2 border-spot"
+        className="mt-3 h-3 w-full border border-rule"
       >
         <span
-          className="block h-full bg-spot transition-[width] duration-200 ease-out motion-reduce:transition-none"
+          className="block h-full bg-wash transition-[width] duration-200 ease-out motion-reduce:transition-none"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="label tabular mt-2 text-paper/70">
+      <p className="label tabular mt-2 text-soft">
         {pct}% read · in this browser
       </p>
     </div>
@@ -1343,20 +1470,20 @@ function RefusalPanel({
 }) {
   const copy = refusalCopy(refusal);
   return (
-    <div className="border-2 border-spot">
-      <p className="label border-b-2 border-spot bg-spot px-4 py-2 text-ink">
+    <div className="border border-rule">
+      <p className="label border-b border-rule bg-wash px-4 py-2 text-graphite">
         Not read · {filename}
       </p>
       <div className="space-y-3 px-4 py-4">
-        <p className="font-voice text-lg leading-relaxed text-paper">{copy.what}</p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+        <p className="font-voice text-lg leading-relaxed text-graphite">{copy.what}</p>
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
           {copy.why}
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           {copy.instead}
         </p>
         <div className="flex flex-wrap gap-3 pt-1">
-          <button type="button" onClick={onPaste} className="slug label slug-on-ink">
+          <button type="button" onClick={onPaste} className="slug label slug-">
             <span>Paste the text instead</span>
           </button>
           <button type="button" onClick={onRetry} className="mark">
@@ -1384,10 +1511,10 @@ function Jurisdiction({
         title="Where you work"
         note="Asked because the same clause carries different weight in different states"
       />
-      <div className="px-4 py-4 sm:px-6">
+      <div className="px-4 pb-6 pt-4 sm:px-8">
         <p
           id="jurisdiction-why"
-          className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper"
+          className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite"
         >
           The same clause does not mean the same thing in every state, and a
           finding that is accurate about your contract can still be no use to
@@ -1397,7 +1524,7 @@ function Jurisdiction({
           changes a flag&rsquo;s severity.
         </p>
 
-        <label htmlFor="state" className="label mt-6 block text-paper/70">
+        <label htmlFor="state" className="label mt-6 block text-soft">
           State you work in
         </label>
         <span className="state-field mt-2">
@@ -1426,14 +1553,14 @@ function Jurisdiction({
         {value ? (
           <div className="mt-4">
             <p className="label state-stamp">In use: {value}</p>
-            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
               Every enforceability note you are shown is keyed to {value}. You
               can change it whenever you like, to fix a mistake or to see how
               the same contract reads somewhere else.
             </p>
           </div>
         ) : (
-          <p className="mt-4 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+          <p className="mt-4 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
             It is the only question Redline asks before it reads your document.
           </p>
         )}
@@ -1489,8 +1616,8 @@ function QuestionBox({
         title="Ask about your document"
         note="Answered from the sentences in your document"
       />
-      <div className="px-4 py-4 sm:px-6">
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+      <div className="px-4 pb-6 pt-4 sm:px-8">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           Ask anything the text beside this could settle. Where your document
           says it, the answer comes back with the sentence it came from. Where
           your document is silent, you are told that.
@@ -1514,32 +1641,32 @@ function QuestionBox({
             placeholder={
               enabled ? "How long does the non-compete last?" : "Read a document first"
             }
-            className="w-full border-2 border-spot bg-paper px-3 py-2 font-voice text-[0.9375rem] text-ink placeholder:text-ink/45 disabled:cursor-not-allowed disabled:border-paper/30 disabled:bg-transparent disabled:text-paper/50 disabled:placeholder:text-paper/55"
+            className="w-full border border-[#a9afb7] bg-white px-3 py-2 font-voice text-[0.9375rem] text-graphite placeholder:text-soft disabled:cursor-not-allowed disabled:border-rule disabled:bg-wash disabled:text-soft disabled:placeholder:text-soft"
           />
           <button
             type="submit"
             disabled={!enabled || !value.trim() || ask.kind === "asking"}
-            className="slug label slug-on-ink mt-3 disabled:cursor-not-allowed disabled:border-paper/30 disabled:bg-transparent disabled:text-paper/45"
+            className="slug label slug-mt-3"
           >
             <span>{ask.kind === "asking" ? "Reading" : "Ask"}</span>
           </button>
         </form>
 
         {ask.kind === "asking" ? (
-          <div className="mt-4 border-2 border-spot" role="status" aria-live="polite">
-            <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
+          <div className="mt-4 border border-rule" role="status" aria-live="polite">
+            <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
               Looking through your document
             </p>
             <div className="space-y-3 px-3 py-3">
-              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
                 &ldquo;{ask.question}&rdquo;
               </p>
-              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+              <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
                 Nothing reaches this panel until the sentences behind it have
                 been found in the copy you are looking at.
               </p>
-              <div className="h-[3px] w-full overflow-hidden bg-spot/25" aria-hidden="true">
-                <span className="sweep block h-full w-1/3 bg-spot" />
+              <div className="h-[3px] w-full overflow-hidden bg-rule" aria-hidden="true">
+                <span className="sweep block h-full w-1/3 bg-wash" />
               </div>
             </div>
           </div>
@@ -1617,8 +1744,8 @@ function RedLines({
         title="Your red lines"
         note="What you will not sign, in your own words"
       />
-      <div className="px-4 py-4 sm:px-6">
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+      <div className="px-4 pb-6 pt-4 sm:px-8">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           A red line is something you have already decided you will not sign.
           Write it the way you would say it out loud.
         </p>
@@ -1630,14 +1757,14 @@ function RedLines({
         </div>
         {/* Ticket criterion, not a nicety: a reader who expects a red line to
             filter the output has been misled by us. */}
-        <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+        <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
           When a flag matches one of your red lines, Redline moves that flag to
           the top and names the line it crossed. You still see every flag
           either way. A red line never hides one, and never ranks one lower
           than it would have been on its own.
         </p>
         {reruns ? (
-          <p className="label mt-3 max-w-[62ch] leading-relaxed text-spot">
+          <p className="label mt-3 max-w-[62ch] leading-relaxed text-graphite">
             Adding, editing or deleting a line here reads the document again.
           </p>
         ) : null}
@@ -1658,29 +1785,29 @@ function RedLines({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="I will not sign an IP assignment covering personal projects"
             aria-describedby="rl-blank"
-            className="min-w-0 flex-1 border-2 border-spot bg-paper px-3 py-2 font-voice text-[0.9375rem] text-ink placeholder:text-ink/45"
+            className="min-w-0 flex-1 border border-[#a9afb7] bg-white px-3 py-2 font-voice text-[0.9375rem] text-graphite placeholder:text-soft"
           />
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="slug label slug-on-ink disabled:cursor-not-allowed disabled:border-paper/30 disabled:bg-transparent disabled:text-paper/45"
+            className="slug label slug-"
           >
             <span>Add</span>
           </button>
-          <p id="rl-blank" className="label w-full text-paper/60">
+          <p id="rl-blank" className="label w-full text-soft">
             Blank and space-only lines are not kept, because there would be
             nothing for a flag to match.
           </p>
         </form>
 
         {lines.length === 0 ? (
-          <p className="label mt-4 text-paper/60">
+          <p className="label mt-4 text-soft">
             None set. The analysis runs the same way without them.
           </p>
         ) : (
-          <ul className="mt-4 border-t-2 border-spot">
+          <ul className="mt-4 border-t border-rule">
             {lines.map((line) => (
-              <li key={line.id} className="border-b border-spot/40 py-2.5">
+              <li key={line.id} className="border-b border-rule py-2.5">
                 {editing?.id === line.id ? (
                   <form
                     className="flex flex-wrap gap-2"
@@ -1693,7 +1820,7 @@ function RedLines({
                       value={editing.text}
                       onChange={(e) => setEditing({ id: line.id, text: e.target.value })}
                       aria-label={`Edit red line: ${line.text}`}
-                      className="min-w-0 flex-1 border-2 border-spot bg-paper px-2 py-1 font-voice text-[0.9375rem] text-ink"
+                      className="min-w-0 flex-1 border border-[#a9afb7] bg-white px-2 py-1 font-voice text-[0.9375rem] text-graphite"
                       autoFocus
                     />
                     {/* Blank is rejected by the seam either way. Saying so on
@@ -1711,7 +1838,7 @@ function RedLines({
                   </form>
                 ) : (
                   <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                    <p className="min-w-0 flex-1 font-voice text-[0.9375rem] leading-relaxed text-paper">
+                    <p className="min-w-0 flex-1 font-voice text-[0.9375rem] leading-relaxed text-graphite">
                       {line.text}
                     </p>
                     <button
@@ -1781,7 +1908,7 @@ function Analysis({
     <>
       <SectionHead
         id="findings"
-        title="The analysis"
+        title="Findings"
         note={
           run.kind === "done"
             ? "Every claim below shows the sentence it came from"
@@ -1789,15 +1916,16 @@ function Analysis({
         }
       />
 
-      <div className="px-4 py-4 sm:px-6">
+      {run.kind === "done" ? null : (
+      <div className="px-4 pb-6 pt-4 sm:px-8">
         {run.kind === "idle" ? (
-          <div className="border-2 border-spot px-4 py-4">
-            <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+          <div className="border border-rule px-4 py-4">
+            <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
               {ready
                 ? "Your document is read. The text beside this is exactly what gets analysed, and nothing has been sent anywhere yet."
                 : `Nothing to analyse yet — still missing ${missing.join(" and ")}.`}
             </p>
-            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
               Every flag that comes back quotes a sentence from that panel. A
               flag whose sentence cannot be found in your stored text is
               dropped before it reaches you.
@@ -1807,13 +1935,13 @@ function Analysis({
                 type="button"
                 onClick={onRun}
                 disabled={!ready}
-                className="slug label slug-on-ink"
+                className="slug label slug-"
               >
                 <span>Analyse this document</span>
               </button>
             </div>
             {ready ? (
-              <p className="label tabular mt-3 text-paper/70">
+              <p className="label tabular mt-3 text-soft">
                 {sentences.toLocaleString()} sentences · {jurisdiction} ·{" "}
                 {redLines === 0
                   ? "no red lines"
@@ -1835,6 +1963,7 @@ function Analysis({
 
         {run.kind === "failed" ? <Failed failure={run.failure} onRetry={onRun} /> : null}
       </div>
+      )}
 
       {run.kind === "done" ? (
         <Result

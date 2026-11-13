@@ -103,13 +103,13 @@ export function DocumentSheet({
     <figure className="flex min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        className="sheet sheet-scroll relative max-h-[26rem] min-h-0 flex-1 overflow-y-auto border-2 border-spot bg-paper sm:max-h-[32rem] lg:max-h-none"
+        className="sheet sheet-scroll relative max-h-[26rem] min-h-0 flex-1 overflow-y-auto border border-rule bg-quote sm:max-h-[32rem] lg:max-h-none"
       >
         {/* Margins rather than padding: the veils and the bracket position
             against this box, and the tick hangs 1.45rem off its left edge
             into the gutter the margin leaves. */}
         <div ref={contentRef} className="relative ml-12 mr-4 sm:mr-6">
-          <pre className="document whitespace-pre-wrap break-words py-7 text-[0.9375rem] text-ink sm:text-base">
+          <pre className="document whitespace-pre-wrap break-words py-7 text-[0.9375rem] text-graphite sm:text-base">
             {span ? (
               <>
                 {before}
@@ -153,14 +153,14 @@ export function DocumentSheet({
         </div>
       </div>
 
-      <figcaption className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t-2 border-spot bg-ink px-4 py-2">
-        <span className="label tabular text-spot">
+      <figcaption className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rule bg-ground px-4 py-2">
+        <span className="label tabular text-graphite">
           {stamp && span
             ? `${stamp} · windowed at chars ${span.start.toLocaleString()}–${span.end.toLocaleString()}`
             : `${text.length.toLocaleString()} characters · nothing windowed`}
         </span>
         {sample ? (
-          <span className="label bg-paper px-2 py-1 text-ink">
+          <span className="label bg-quote px-2 py-1 text-graphite">
             Sample — not a real contract
           </span>
         ) : null}

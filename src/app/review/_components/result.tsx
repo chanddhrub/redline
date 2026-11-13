@@ -40,6 +40,7 @@ import {
   type WireGeneralStatement,
   type WireRankedFlag,
 } from "../_lib/wire";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type Selection =
   | { kind: "flag"; id: string }
@@ -51,6 +52,28 @@ export type Selection =
   | { kind: "answer"; turn: number; index: number }
   | null;
 
+/**
+ * Opens the document panel at the selected sentence. Provided by the shell,
+ * which owns the panel; anything that shows a quote can offer the way back to
+ * it without the call being threaded through every component in between.
+ */
+export const ShowInDocument = createContext<() => void>(() => {});
+
+function ShowInDocumentButton({ onBefore }: { onBefore?: () => void }) {
+  const show = useContext(ShowInDocument);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onBefore?.();
+        show();
+      }}
+      className="slug slug-quiet"
+    >
+      <span>Show in document</span>
+    </button>
+  );
+}
 /* ── Shared material ─────────────────────────────────────────────────── */
 
 /**
@@ -68,18 +91,17 @@ export function CitedPanel({
   className?: string;
 }) {
   return (
-    <div className={`border-2 border-spot bg-paper ${className}`}>
-      <p className="label tabular border-b-2 border-ink px-3 py-1.5 text-ink">
-        {header} · chars {citation.span.start.toLocaleString()}–
+    <div className={`border border-rule bg-quote ${className}`}>
+      <p className="tabular px-4 pt-2.5 text-[0.75rem] font-semibold text-soft">
+        {header} · characters {citation.span.start.toLocaleString()}–
         {citation.span.end.toLocaleString()}
       </p>
-      <p className="document px-3 py-2.5 text-[0.9375rem] text-ink">
+      <p className="document px-4 pb-3 pt-1.5 text-[1rem] leading-[1.6] text-graphite">
         {citation.text}
       </p>
     </div>
   );
 }
-
 /**
  * The second layer (ADR 0005, DESIGN.md).
  *
@@ -105,15 +127,15 @@ export function NotFromDocument({
 }) {
   if (statements.length === 0) return null;
   return (
-    <div className="border-2 border-dashed border-ink bg-paper">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-dashed border-ink px-3 py-1.5">
-        <p className="label text-ink">Not from your document</p>
+    <div className="border border-dashed border-soft bg-white">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-dashed border-soft px-3 py-1.5">
+        <p className="label text-graphite">Not from your document</p>
         {worksIn ? (
-          <p className="label text-burnt">General context · {worksIn}</p>
+          <p className="label text-soft">General context · {worksIn}</p>
         ) : null}
       </div>
 
-      <p className="border-b border-dashed border-ink/50 px-3 py-2 font-voice text-[0.8125rem] leading-relaxed text-burnt">
+      <p className="border-b border-dashed border-soft px-3 py-2 font-voice text-[0.8125rem] leading-relaxed text-soft">
         None of this is in your contract, so there is no sentence to check it
         against. It is background on the law where you work, and it is not
         advice about your situation. The source and the date under each line
@@ -121,13 +143,13 @@ export function NotFromDocument({
       </p>
 
       {statements.map((statement, index) => (
-        <div key={index} className="flex items-stretch border-t border-dashed border-ink/50 first:border-t-0">
-          <div className="halftone w-9 shrink-0 border-r-2 border-dashed border-ink" aria-hidden="true" />
+        <div key={index} className="flex items-stretch border-t border-dashed border-soft first:border-t-0">
+          <div className="halftone w-9 shrink-0 border-r border-dashed border-soft" aria-hidden="true" />
           <div className="min-w-0 px-3 py-2.5">
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-ink">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
               {statement.statement}
             </p>
-            <p className="label tabular mt-2 text-burnt">
+            <p className="label tabular mt-2 text-soft">
               {statement.basis} · checked {statement.asOf}
             </p>
           </div>
@@ -169,48 +191,34 @@ function Summary({
   if (claims.length === 0) return null;
 
   return (
-    <section aria-labelledby="summary-head" className="px-4 py-5 sm:px-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-spot pb-2">
-        <h3 id="summary-head" className="label text-spot">
-          What this document commits you to
-        </h3>
-        <p className="label text-paper/65">Each line shows the sentence it rests on</p>
-      </div>
+    <section aria-labelledby="summary-head" className="px-4 pb-2 pt-8 sm:px-8">
+      <h3 id="summary-head" className="text-[1.0625rem] font-bold text-graphite">
+        What this document commits you to
+      </h3>
+      <p className="mt-0.5 text-[0.875rem] text-soft">
+        Each line rests on a sentence from your document. Open one to see it.
+      </p>
 
-      <ul>
+      <ul className="mt-3 border-t border-rule">
         {claims.map((claim, index) => {
           const active = selected?.kind === "claim" && selected.index === index;
           return (
-            <li key={index} className="border-b border-spot/40">
+            <li key={index} className={`border-b border-rule ${active ? "bg-wash" : ""}`}>
               <button
                 type="button"
-                aria-pressed={active}
-                onClick={() => onSelect({ kind: "claim", index })}
-                className={`block w-full px-3 py-3 text-left transition-colors duration-200 ${
-                  active ? "bg-spot text-ink" : "text-paper hover:bg-spot/15"
-                }`}
+                aria-expanded={active}
+                onClick={() => onSelect(active ? null : { kind: "claim", index })}
+                className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors duration-150 hover:bg-wash"
               >
-                <span className="block max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed">
+                <Chevron open={active} />
+                <span className="block max-w-[64ch] text-[0.9375rem] leading-relaxed text-graphite">
                   {claim.statement}
-                </span>
-                <span
-                  className={`label tabular mt-2 block ${
-                    active ? "text-burnt" : "text-paper/65"
-                  }`}
-                >
-                  Quote located · chars {claim.citation.span.start.toLocaleString()}–
-                  {claim.citation.span.end.toLocaleString()}
                 </span>
               </button>
               {active ? (
-                <div className="mx-3 mb-3 lg:hidden">
+                <div className="space-y-3 px-3 pb-4 pl-10">
                   <CitedPanel citation={claim.citation} header="From your document" />
-                  <a
-                    href="#document"
-                    className="mark mt-2 inline-block underline decoration-2"
-                  >
-                    Show it in the document
-                  </a>
+                  <ShowInDocumentButton />
                 </div>
               ) : null}
             </li>
@@ -221,12 +229,68 @@ function Summary({
   );
 }
 
+/** Open and closed, drawn rather than typed, in the text colour. */
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+      className={`mt-[0.32rem] shrink-0 text-soft transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+    >
+      <path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 /* ── The ranked flags ────────────────────────────────────────────────── */
 
 function clauseLabels(coverage: CoverageReceipt): Record<string, string> {
   const labels: Record<string, string> = {};
   for (const entry of coverage.checked) labels[entry.clauseType] = entry.label;
   return labels;
+}
+/**
+ * Severity, three ways: the bar's length (44px or 22px), the spelled word,
+ * and a colour that repeats them for readers who have colour. Greyscale loses
+ * the third and keeps the other two.
+ */
+function SeverityMark({ severity }: { severity: WireRankedFlag["severity"] }) {
+  const tone = severity === "critical" ? "text-crit" : "text-high";
+  return (
+    <span className={`flex items-center gap-2 ${tone}`}>
+      <span
+        className="sev-bar shrink-0"
+        style={{ width: SEVERITY_BAR_PX[severity] }}
+        aria-hidden="true"
+      />
+      <span className="text-[0.8125rem] font-bold">{SEVERITY_WORD[severity]}</span>
+    </span>
+  );
+}
+
+function CopyCounterOffer({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void navigator.clipboard?.writeText(text).then(
+          () => setCopied(true),
+          () => setCopied(false),
+        );
+      }}
+      className="slug"
+    >
+      <span aria-live="polite">{copied ? "Copied" : "Copy counter-offer"}</span>
+    </button>
+  );
 }
 
 function FlagRow({
@@ -251,100 +315,91 @@ function FlagRow({
 }) {
   const { flag, severity, promotion } = ranked;
   const rest = remainder(flag.meaning);
+  const detail = `flag-${flag.id}`;
 
   return (
-    <li className="border-b border-spot/40">
+    <li className={`border-b border-rule ${active ? "bg-wash" : ""}`}>
       {promotion ? (
-        <div className="border-b-2 border-spot bg-spot px-3 py-2 text-ink">
-          <p className="label">Promoted — this crosses a red line you set</p>
-          <p className="mt-1 max-w-[62ch] font-voice text-[0.9375rem] leading-snug font-semibold">
-            “{promotion.redLineText}”
-          </p>
-        </div>
+        <p className="px-3 pt-3 text-[0.8125rem] text-graphite @xl:pl-[4.75rem]">
+          <span className="font-bold">Moved to the top:</span> this crosses your red line
+          &ldquo;{promotion.redLineText}&rdquo;
+        </p>
       ) : null}
 
       <button
         type="button"
-        aria-pressed={active}
+        aria-expanded={active}
+        aria-controls={detail}
         onClick={onSelect}
-        className={`block w-full px-3 py-3 text-left transition-colors duration-200 ${
-          active ? "bg-spot text-ink" : "text-paper hover:bg-spot/15"
-        }`}
+        className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-3.5 text-left transition-colors duration-150 hover:bg-wash @xl:grid-cols-[3.25rem_minmax(0,1fr)_7.5rem_7rem]"
       >
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span
-            className={`label tabular border-2 px-2 py-0.5 ${
-              active ? "border-ink bg-ink text-spot" : "border-spot text-spot"
-            }`}
-          >
-            {code}
-          </span>
-          <span
-            className="sev-bar shrink-0"
-            style={{ width: SEVERITY_BAR_PX[severity] }}
-            aria-hidden="true"
-          />
-          <span className="label">{SEVERITY_WORD[severity]}</span>
-          <span className={`label ${active ? "text-burnt" : "text-paper/65"}`}>
-            {clauseLabel}
-          </span>
+        <span className="tabular flex items-center gap-1.5 pt-0.5 text-[0.8125rem] text-soft">
+          <Chevron open={active} />
+          {code}
         </span>
-
-        <span className="mt-2 block max-w-[62ch] font-voice text-[1.0625rem] font-semibold leading-snug">
-          {headline(flag.meaning)}
+        <span className="min-w-0">
+          <span className="block text-[1rem] font-semibold leading-snug text-graphite">
+            {headline(flag.meaning)}
+          </span>
+          <span className="mt-0.5 block text-[0.8125rem] text-soft">{clauseLabel}</span>
         </span>
-
-        <span
-          className={`label tabular mt-2 block ${active ? "text-burnt" : "text-paper/65"}`}
-        >
-          Quote located · chars {flag.citation.span.start.toLocaleString()}–
-          {flag.citation.span.end.toLocaleString()}
+        <span className="col-start-2 @xl:col-start-auto @xl:pt-0.5">
+          <SeverityMark severity={severity} />
+        </span>
+        <span className="col-start-2 text-[0.8125rem] text-soft @xl:col-start-auto @xl:pt-0.5">
+          Quote found
         </span>
       </button>
 
       {active ? (
-        <div className="space-y-4 bg-spot/10 px-3 pb-4 pt-3">
-          {/* Phone is a different composition of the same mechanic. The
-              sentence is here in full, at reading size, and the window above
-              is already cropped to it — this is the way back up to it. */}
-          <div className="lg:hidden">
-            <CitedPanel citation={flag.citation} header="From your document" />
-            <a href="#document" className="mark mt-2 inline-block underline decoration-2">
-              Show it in the document
-            </a>
-          </div>
+        <div id={detail} className="px-3 pb-5 @xl:pl-[4.75rem]">
+          <div className="grid gap-5 @3xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+            <div className="min-w-0 space-y-4">
+              <CitedPanel citation={flag.citation} header="From your document" />
 
-          {flag.escapability.length > 0 ? (
-            <dl className="tabular grid gap-x-8 border-t border-spot/40 sm:grid-cols-2">
-              {flag.escapability.map((measure, index) => (
-                <div key={index} className="min-w-0 border-b border-spot/30 py-2">
-                  <dt className="label text-paper/65">{factorLabel(measure.factor)}</dt>
-                  <dd className="mt-1 font-voice text-sm font-semibold leading-snug text-paper">
-                    {measure.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
+              {flag.escapability.length > 0 ? (
+                <dl className="tabular grid gap-x-5 gap-y-1 text-[0.875rem] @md:grid-cols-[minmax(0,10rem)_minmax(0,1fr)] @md:gap-y-1.5">
+                  {flag.escapability.map((measure, index) => (
+                    <div key={index} className="contents">
+                      <dt className="text-soft">{factorLabel(measure.factor)}</dt>
+                      <dd className="mb-1.5 font-semibold text-graphite @md:mb-0">{measure.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
 
-          {rest ? (
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
-              {rest}
-            </p>
-          ) : null}
+              {rest ? (
+                <p className="max-w-[64ch] text-[0.9375rem] leading-relaxed text-graphite">
+                  {rest}
+                </p>
+              ) : null}
+            </div>
 
-          <div className="border-t-2 border-spot pt-3">
-            <p className="label text-spot">Counter-offer to send back</p>
-            <p className="mt-1.5 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
-              {flag.counterOffer}
-            </p>
+            <div className="min-w-0">
+              <div className="border border-rule bg-white px-4 py-3">
+                <p className="text-[0.8125rem] font-semibold text-soft">
+                  Counter-offer to send back
+                </p>
+                <p className="mt-1 text-[0.9375rem] leading-relaxed text-graphite">
+                  {flag.counterOffer}
+                </p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <CopyCounterOffer text={flag.counterOffer} />
+                <ShowInDocumentButton />
+              </div>
+            </div>
           </div>
 
           {/* The second layer, beside the flag and never inside it. The
               severity, the band and the position above were all settled
               before this was looked up, and nothing here can move them
               (ADR 0005). */}
-          <NotFromDocument statements={notes} worksIn={worksIn} />
+          {notes.length > 0 ? (
+            <div className="mt-5">
+              <NotFromDocument statements={notes} worksIn={worksIn} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -364,41 +419,56 @@ function Flags({
 }) {
   const codes = stampCodes(analysis.flags);
   const labels = clauseLabels(analysis.coverage);
+  const count = analysis.flags.length;
+  const critical = analysis.flags.filter((ranked) => ranked.severity === "critical").length;
+  const high = count - critical;
+  const tally = [
+    critical ? `${critical} Critical` : null,
+    high ? `${high} High` : null,
+  ]
+    .filter(Boolean)
+    .join(" and ");
 
   return (
-    <section aria-labelledby="flags-head" className="px-4 py-5 sm:px-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-spot pb-2">
-        <h3 id="flags-head" className="label text-spot">
-          {analysis.flags.length === 1 ? "One flag" : `${analysis.flags.length} flags`}
-        </h3>
-        <p className="label text-paper/65">
-          Ranked by how hard each one is to get out of, then by money
-        </p>
-      </div>
-
-      <ul>
-        {analysis.flags.map((ranked, index) => (
-          <FlagRow
-            key={ranked.flag.id}
-            ranked={ranked}
-            code={codes[index]}
-            clauseLabel={labels[ranked.flag.clauseType] ?? ranked.flag.clauseType}
-            active={selected?.kind === "flag" && selected.id === ranked.flag.id}
-            onSelect={() => onSelect({ kind: "flag", id: ranked.flag.id })}
-            notes={notesForTopic(analysis.context, ranked.flag.clauseType)}
-            worksIn={worksIn}
-          />
-        ))}
-      </ul>
-
-      <p className="label mt-3 max-w-[62ch] leading-relaxed text-paper/65">
-        Every sentence above was found in your stored text before the flag was
-        shown. Anything the model could not quote was dropped.
+    <section aria-labelledby="flags-head" className="px-4 pb-2 pt-4 sm:px-8">
+      <h3 id="flags-head" className="text-[1.0625rem] font-bold text-graphite">
+        {count === 1 ? "1 clause could hurt you" : `${count} clauses could hurt you`}
+      </h3>
+      <p className="mt-0.5 max-w-[64ch] text-[0.875rem] leading-relaxed text-soft">
+        {tally}, ranked by how hard each one is to get out of, then by money.
+        Every quote was found in your document before it was shown. Open a row
+        for the sentence and a counter-offer.
       </p>
+
+      <div
+        className="tabular mt-4 hidden grid-cols-[3.25rem_minmax(0,1fr)_7.5rem_7rem] gap-x-3 border-b border-rule px-3 pb-2 text-[0.75rem] font-semibold text-soft @xl:grid"
+        aria-hidden="true"
+      >
+        <span>Code</span>
+        <span>Clause</span>
+        <span>Severity</span>
+        <span>Source</span>
+      </div>
+      <ul className="border-t border-rule @xl:border-t-0">
+        {analysis.flags.map((ranked, index) => {
+          const active = selected?.kind === "flag" && selected.id === ranked.flag.id;
+          return (
+            <FlagRow
+              key={ranked.flag.id}
+              ranked={ranked}
+              code={codes[index]}
+              clauseLabel={labels[ranked.flag.clauseType] ?? ranked.flag.clauseType}
+              active={active}
+              onSelect={() => onSelect(active ? null : { kind: "flag", id: ranked.flag.id })}
+              notes={notesForTopic(analysis.context, ranked.flag.clauseType)}
+              worksIn={worksIn}
+            />
+          );
+        })}
+      </ul>
     </section>
   );
 }
-
 /* ── The coverage receipt ────────────────────────────────────────────── */
 
 /**
@@ -407,34 +477,29 @@ function Flags({
  */
 export function Receipt({ coverage }: { coverage: CoverageReceipt }) {
   return (
-    <div className="border-2 border-paper">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 bg-paper px-3 py-2">
-        <h3 className="label text-ink">Coverage receipt</h3>
-        <p className="label text-ink/75">What was checked, and what was not</p>
+    <div className="border border-rule bg-white">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2.5">
+        <h3 className="text-[0.9375rem] font-bold text-graphite">What was checked</h3>
+        <p className="text-[0.8125rem] text-soft">And what was not</p>
       </div>
 
       <dl>
         {coverage.checked.map((entry) => (
           <div
             key={entry.clauseType}
-            className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-paper/35 px-3 py-2.5"
+            className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule px-4 py-2.5"
           >
-            <dt className="min-w-0 font-voice text-[0.9375rem] leading-snug text-paper">
-              {entry.label}
-            </dt>
-            <dd className="label tabular text-spot">{entry.finding}</dd>
+            <dt className="min-w-0 text-[0.9375rem] leading-snug text-graphite">{entry.label}</dt>
+            <dd className="tabular text-[0.8125rem] font-semibold text-soft">{entry.finding}</dd>
           </div>
         ))}
       </dl>
 
-      <div className="px-3 py-3">
-        <p className="label text-paper/75">Not reviewed</p>
-        <ul className="mt-2 space-y-2">
+      <div className="px-4 py-3">
+        <p className="text-[0.8125rem] font-semibold text-graphite">Not reviewed</p>
+        <ul className="mt-1.5 list-disc space-y-1.5 pl-5 marker:text-soft">
           {coverage.notReviewed.map((line, index) => (
-            <li
-              key={index}
-              className="max-w-[62ch] border-l-2 border-paper/35 pl-3 font-voice text-sm leading-relaxed text-paper/90"
-            >
+            <li key={index} className="max-w-[64ch] text-[0.875rem] leading-relaxed text-soft">
               {line}
             </li>
           ))}
@@ -475,27 +540,27 @@ export function Running({
   redLines: number;
 }) {
   return (
-    <div className="border-2 border-spot" role="status" aria-live="polite">
-      <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
+    <div className="border border-rule" role="status" aria-live="polite">
+      <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {RUNNING_BECAUSE[reason]}
       </p>
       <div className="space-y-3 px-4 py-4">
-        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
           Redline has sent your text to the model once. Nothing reaches this
           screen until every sentence quoted back has been found in the copy
           you are looking at.
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
           A quote that cannot be found is dropped rather than softened, so a
           short list is what the standard looks like when it holds.
         </p>
         {/* The bar travels; there is no percentage behind it, so it carries
             no number. Under reduced motion it holds still and the seconds
             beneath it do the work. */}
-        <div className="h-[3px] w-full overflow-hidden bg-spot/25" aria-hidden="true">
-          <span className="sweep block h-full w-1/3 bg-spot" />
+        <div className="h-[3px] w-full overflow-hidden bg-rule" aria-hidden="true">
+          <span className="sweep block h-full w-1/3 bg-wash" />
         </div>
-        <p className="label tabular text-paper/70">
+        <p className="label tabular text-soft">
           {elapsed}s · {sentences.toLocaleString()} sentences · {jurisdiction} ·{" "}
           {redLines === 0
             ? "no red lines"
@@ -582,22 +647,22 @@ export function Failed({
 }) {
   const copy = failureCopy(failure);
   return (
-    <div className="border-2 border-spot" role="alert">
-      <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
+    <div className="border border-rule" role="alert">
+      <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {heading}
       </p>
       <div className="space-y-3 px-4 py-4">
-        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
           {copy.head}.
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/85">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           {copy.what}
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/85">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           {copy.why}
         </p>
         {copy.retry ? (
-          <button type="button" onClick={onRetry} className="slug label slug-on-ink">
+          <button type="button" onClick={onRetry} className="slug label slug-">
             <span>Run it again</span>
           </button>
         ) : null}
@@ -621,21 +686,21 @@ export function Failed({
 function NotAddressed() {
   return (
     <>
-      <p className="label border-y-2 border-spot bg-spot px-3 py-2 text-ink">
+      <p className="label border-y border-rule bg-wash px-3 py-2 text-graphite">
         Your document does not address this
       </p>
       <div className="space-y-3 px-3 py-3">
-        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+        <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
           Nothing in the text beside this speaks to that question, so there is
           no answer to give you.
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/85">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           Redline answers from your document and from nothing else. Something
           that sounds right is easy to write, and you would have no way to tell
           it apart from an answer that really was in your contract, so this box
           does not write it.
         </p>
-        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+        <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
           Questions about the law where you work, about what is usual in the
           market, or about the company itself all land here. They need someone
           who can look outside this file. Ask about something your document
@@ -674,11 +739,11 @@ export function AnswerPanel({
   onSelect: (selection: Selection) => void;
 }) {
   return (
-    <div className="border-2 border-spot" aria-live="polite">
-      <p className="label border-b-2 border-spot px-3 py-1.5 text-spot">
+    <div className="border border-rule" aria-live="polite">
+      <p className="label border-b border-rule px-3 py-1.5 text-graphite">
         You asked
       </p>
-      <p className="px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper">
+      <p className="px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite">
         {question}
       </p>
 
@@ -686,14 +751,14 @@ export function AnswerPanel({
 
       {answer.kind === "answered" ? (
         <>
-          <p className="label border-y-2 border-spot bg-spot px-3 py-2 text-ink">
+          <p className="label border-y border-rule bg-wash px-3 py-2 text-graphite">
             Answered from your document
           </p>
-          <p className="max-w-[62ch] px-3 py-3 font-voice text-[1.0625rem] leading-relaxed text-paper">
+          <p className="max-w-[62ch] px-3 py-3 font-voice text-[1.0625rem] leading-relaxed text-graphite">
             {answer.text}
           </p>
 
-          <p className="label border-t-2 border-spot px-3 py-1.5 text-spot">
+          <p className="label border-t border-rule px-3 py-1.5 text-graphite">
             {answer.citations.length === 1
               ? "The sentence this rests on"
               : "The sentences this rests on"}
@@ -721,7 +786,7 @@ export function AnswerPanel({
               );
             })}
           </ul>
-          <p className="label border-t-2 border-spot px-3 py-2 leading-relaxed text-paper/65">
+          <p className="label border-t border-rule px-3 py-2 leading-relaxed text-soft">
             Each sentence above was found in your stored text before the answer
             was shown. One that could not be found would have taken the answer
             with it.
@@ -772,10 +837,10 @@ export function Result({
           sign. */}
       {clean ? (
         <section aria-labelledby="clean-head" className="px-4 py-5 sm:px-6">
-          <h3 id="clean-head" className="display max-w-[18ch] text-3xl text-paper sm:text-4xl">
+          <h3 id="clean-head" className="display max-w-[18ch] text-3xl text-graphite sm:text-4xl">
             Nothing here qualifies
           </h3>
-          <p className="mt-4 max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-paper">
+          <p className="mt-4 max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
             None of the four clause types Redline checks turned anything up in
             this document. That is a narrower statement than it sounds, and the
             receipt below says exactly how narrow.
@@ -786,8 +851,8 @@ export function Result({
         </section>
       ) : null}
 
-      <Summary analysis={analysis} selected={selected} onSelect={onSelect} />
-
+      {/* The flags lead: they are what the reader came for. The summary
+          follows, one line per commitment, each opening onto its sentence. */}
       {clean ? null : (
         <Flags
           analysis={analysis}
@@ -797,14 +862,16 @@ export function Result({
         />
       )}
 
+      <Summary analysis={analysis} selected={selected} onSelect={onSelect} />
+
       {analysis.governingLaw ? (
         <section aria-labelledby="law-head" className="px-4 py-5 sm:px-6">
-          <div className="border-b-2 border-spot pb-2">
-            <h3 id="law-head" className="label text-spot">
+          <div className="border-b border-rule pb-2">
+            <h3 id="law-head" className="label text-graphite">
               Governing law
             </h3>
           </div>
-          <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+          <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
             This sentence is in your document, so it is quoted. It picks the
             state whose law your contract says applies, and that is often not
             the state you work in.
@@ -823,16 +890,16 @@ export function Result({
               told us. Nothing here says which of them wins — that is a
               general-context question and it goes on the dashed panel. */}
           {law ? (
-            <dl className="tabular mt-3 grid gap-x-8 border-t-2 border-spot sm:grid-cols-2">
-              <div className="min-w-0 border-b border-spot/40 py-2">
-                <dt className="label text-paper/65">The clause picks</dt>
-                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-paper">
+            <dl className="tabular mt-3 grid gap-x-8 border-t border-rule sm:grid-cols-2">
+              <div className="min-w-0 border-b border-rule py-2">
+                <dt className="label text-soft">The clause picks</dt>
+                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-graphite">
                   {law.named ?? "No state named in that sentence"}
                 </dd>
               </div>
-              <div className="min-w-0 border-b border-spot/40 py-2">
-                <dt className="label text-paper/65">You work in</dt>
-                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-paper">
+              <div className="min-w-0 border-b border-rule py-2">
+                <dt className="label text-soft">You work in</dt>
+                <dd className="mt-1 font-voice text-[0.9375rem] font-semibold leading-snug text-graphite">
                   {law.worksIn ?? "No state set"}
                 </dd>
               </div>
@@ -840,7 +907,7 @@ export function Result({
           ) : null}
 
           {law?.differ ? (
-            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+            <p className="mt-3 max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
               Those are two different states. Your document does not settle
               which one a court would apply, and nothing above answers that.
             </p>

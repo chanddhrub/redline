@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Archivo, Tinos } from "next/font/google";
+import { Anton, Archivo, Public_Sans, Tinos } from "next/font/google";
 import "./globals.css";
 
 const anton = Anton({
@@ -10,6 +10,13 @@ const anton = Anton({
 
 const archivo = Archivo({
   variable: "--font-archivo",
+  subsets: ["latin"],
+});
+
+// Redline's own voice inside the review screen: a plain public-service sans,
+// so the tool reads as a report rather than a poster.
+const publicSans = Public_Sans({
+  variable: "--font-public",
   subsets: ["latin"],
 });
 
@@ -30,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${archivo.variable} ${tinos.variable} h-full antialiased`}
+      className={`${anton.variable} ${archivo.variable} ${tinos.variable} ${publicSans.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>
