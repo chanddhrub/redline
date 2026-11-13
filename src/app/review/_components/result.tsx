@@ -663,7 +663,7 @@ export function Failed({
           {copy.why}
         </p>
         {copy.retry ? (
-          <button type="button" onClick={onRetry} className="slug label slug-">
+          <button type="button" onClick={onRetry} className="slug label">
             <span>Run it again</span>
           </button>
         ) : null}

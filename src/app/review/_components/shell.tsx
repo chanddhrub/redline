@@ -1052,7 +1052,7 @@ export function Shell() {
                   placeholder="Paste here…"
                 />
                 <div className="flex flex-wrap gap-3 border-t border-rule p-3">
-                  <button type="submit" className="slug label slug-">
+                  <button type="submit" className="slug label">
                     <span>Read this text</span>
                   </button>
                   <button
@@ -1392,7 +1392,7 @@ function Dropzone({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="slug label slug-"
+            className="slug label"
           >
             <span>Choose a file</span>
           </button>
@@ -1483,7 +1483,7 @@ function RefusalPanel({
           {copy.instead}
         </p>
         <div className="flex flex-wrap gap-3 pt-1">
-          <button type="button" onClick={onPaste} className="slug label slug-">
+          <button type="button" onClick={onPaste} className="slug label">
             <span>Paste the text instead</span>
           </button>
           <button type="button" onClick={onRetry} className="mark">
@@ -1790,7 +1790,7 @@ function RedLines({
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="slug label slug-"
+            className="slug label"
           >
             <span>Add</span>
           </button>
@@ -1935,7 +1935,7 @@ function Analysis({
                 type="button"
                 onClick={onRun}
                 disabled={!ready}
-                className="slug label slug-"
+                className="slug label"
               >
                 <span>Analyse this document</span>
               </button>

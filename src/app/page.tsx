@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HomeAccount } from "./_components/home-account";
 import { Inspector } from "./_demo/inspector";
 
 const REFUSALS = [
@@ -67,9 +68,12 @@ export default function Home() {
               Read it before you sign it
             </span>
           </div>
-          <Link href="/review" className="mark">
-            Read your document
-          </Link>
+          <div className="flex items-baseline gap-5">
+            <HomeAccount />
+            <Link href="/review" className="mark">
+              Read your document
+            </Link>
+          </div>
         </div>
       </header>
 

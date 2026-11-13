@@ -141,7 +141,7 @@ export function AccountPanel({
               <button
                 type="submit"
                 disabled={!email.trim() || account.sending}
-                className="slug label slug-"
+                className="slug label"
               >
                 <span>{account.sending ? "Sending" : "Send me a link"}</span>
               </button>
@@ -301,7 +301,7 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
               ? ` Your account holds one document, so this replaces ${status.filename}.`
               : ""}
           </p>
-          <button type="button" onClick={kept.onKeep} className="slug label slug-">
+          <button type="button" onClick={kept.onKeep} className="slug label">
             <span>Save the text and analysis</span>
           </button>
         </>
