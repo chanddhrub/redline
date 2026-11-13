@@ -80,19 +80,19 @@ export function AccountPanel({
   const { state } = account;
 
   return (
-    <div className="border-2 border-spot">
-      <p className="label border-b-2 border-spot bg-spot px-3 py-2 text-ink">
+    <div className="border border-rule">
+      <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {state.kind === "signed-in" ? "Kept for your account" : "Kept in this tab only"}
       </p>
       <div className="space-y-3 px-4 py-4">
         {state.kind === "unavailable" ? (
           <>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
               This copy of Redline has no account set up, so there is nowhere to
               keep your red lines. They last as long as this tab. Close it and
               you will type them again.
             </p>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
               Everything else works: read a document, run the analysis, ask it
               questions.
             </p>
@@ -100,20 +100,20 @@ export function AccountPanel({
         ) : null}
 
         {state.kind === "checking" ? (
-          <p className="label text-paper/70" role="status">
+          <p className="label text-soft" role="status">
             Checking whether you are signed in
           </p>
         ) : null}
 
         {state.kind === "signed-out" ? (
           <>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
               Your red lines last as long as this tab. Sign in and they are
               waiting the next time you open a contract.
             </p>
             {/* The limit of the promise, said before they sign in rather than
                 discovered afterwards. */}
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
               An account keeps your red lines. It can keep a document&rsquo;s
               text and analysis too, but only if you choose to. The original
               file is never stored, here or anywhere.
@@ -136,16 +136,16 @@ export function AccountPanel({
                 placeholder="you@example.com"
                 autoComplete="email"
                 aria-describedby="account-note"
-                className="min-w-0 flex-1 border-2 border-spot bg-paper px-3 py-2 font-voice text-[0.9375rem] text-ink placeholder:text-ink/45"
+                className="min-w-0 flex-1 border border-[#a9afb7] bg-white px-3 py-2 font-voice text-[0.9375rem] text-graphite placeholder:text-soft"
               />
               <button
                 type="submit"
                 disabled={!email.trim() || account.sending}
-                className="slug label slug-on-ink disabled:cursor-not-allowed disabled:border-paper/30 disabled:bg-transparent disabled:text-paper/45"
+                className="slug label"
               >
                 <span>{account.sending ? "Sending" : "Send me a link"}</span>
               </button>
-              <p id="account-note" className="label w-full text-paper/60">
+              <p id="account-note" className="label w-full text-soft">
                 We email you a link. There is no password to invent.
               </p>
             </form>
@@ -155,13 +155,13 @@ export function AccountPanel({
         {state.kind === "link-sent" ? (
           <>
             <p
-              className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper"
+              className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite"
               role="status"
             >
               The link is on its way to {state.email}. Open it and you are
               signed in. It works once, and it stops working after an hour.
             </p>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft">
               Leave this tab open. Your document and everything you have typed
               are still here.
             </p>
@@ -178,7 +178,7 @@ export function AccountPanel({
 
         {state.kind === "signed-in" ? (
           <>
-            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper">
+            <p className="max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-graphite">
               Signed in as {state.email}. Your red lines are kept, and they are
               yours alone.
             </p>
@@ -194,7 +194,7 @@ export function AccountPanel({
 
         {account.trouble ? (
           <p
-            className="max-w-[62ch] border-2 border-paper/40 px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper"
+            className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite"
             role="status"
           >
             {account.trouble}
@@ -212,18 +212,18 @@ export function AccountPanel({
  */
 function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
   const { status, onScreen, isThisOne, note } = kept;
-  const body = "max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-paper/80";
+  const body = "max-w-[62ch] font-voice text-[0.9375rem] leading-relaxed text-soft";
   const held =
     status.kind === "kept" || status.kind === "deleting" || status.kind === "delete-failed"
       ? status.filename
       : null;
 
   return (
-    <div className="space-y-3 border-t-2 border-spot/40 pt-3">
-      <p className="label text-spot">Your document</p>
+    <div className="space-y-3 border-t border-rule pt-3">
+      <p className="label text-graphite">Your document</p>
 
       {status.kind === "checking" ? (
-        <p className="label text-paper/70" role="status">
+        <p className="label text-soft" role="status">
           Checking what your account holds
         </p>
       ) : null}
@@ -236,13 +236,13 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
       ) : null}
 
       {status.kind === "deleting" ? (
-        <p className="label text-paper/70" role="status">
+        <p className="label text-soft" role="status">
           Deleting
         </p>
       ) : null}
 
       {status.kind === "delete-failed" ? (
-        <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+        <p className="label max-w-[40ch] leading-relaxed text-graphite" role="status">
           Deleting did not go through. It is still in your account.
         </p>
       ) : null}
@@ -255,18 +255,18 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
             original file was never stored.
           </p>
           {status.writing === "saving" ? (
-            <p className="label text-paper/70" role="status">
+            <p className="label text-soft" role="status">
               Keeping
             </p>
           ) : null}
           {status.writing === "saved" ? (
-            <p className="label text-paper/70" role="status">
+            <p className="label text-soft" role="status">
               Kept
             </p>
           ) : null}
           {status.writing === "failed" ? (
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-              <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+              <p className="label max-w-[40ch] leading-relaxed text-graphite" role="status">
                 The latest change did not reach your account. It is still on
                 this screen.
               </p>
@@ -301,7 +301,7 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
               ? ` Your account holds one document, so this replaces ${status.filename}.`
               : ""}
           </p>
-          <button type="button" onClick={kept.onKeep} className="slug label slug-on-ink">
+          <button type="button" onClick={kept.onKeep} className="slug label">
             <span>Save the text and analysis</span>
           </button>
         </>
@@ -327,7 +327,7 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
 
       {note ? (
         <p
-          className="max-w-[62ch] border-2 border-paper/40 px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-paper"
+          className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite"
           role="status"
         >
           {note}
@@ -341,28 +341,28 @@ function KeepingNote({ keeping }: { keeping: Keeping }) {
   if (keeping.kind === "idle") return null;
   if (keeping.kind === "saving") {
     return (
-      <p className="label text-paper/70" role="status">
+      <p className="label text-soft" role="status">
         Keeping
       </p>
     );
   }
   if (keeping.kind === "saved") {
     return (
-      <p className="label text-paper/70" role="status">
+      <p className="label text-soft" role="status">
         Kept
       </p>
     );
   }
   if (keeping.kind === "unreachable") {
     return (
-      <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+      <p className="label max-w-[40ch] leading-relaxed text-graphite" role="status">
         Your kept red lines could not be read. What is on this screen is still
         here, and Redline has not written over what you have kept.
       </p>
     );
   }
   return (
-    <p className="label max-w-[40ch] leading-relaxed text-spot" role="status">
+    <p className="label max-w-[40ch] leading-relaxed text-graphite" role="status">
       That change did not reach your account. It is still on this screen.
     </p>
   );

@@ -14,6 +14,20 @@
   --peach: #ffc7a6;
   --rule: 1px;
   --tilt: -2.6deg;
+
+  /* The review screen's report palette (direction A). Graphite on a warm
+     off-white; colour is spent only on severity and on the one action
+     colour. Cream stays the document's own paper. */
+  --c-ground: #fbfaf7;
+  --c-graphite: #1f2328;
+  --c-soft: #565c64;
+  --c-rule: #d9dce0;
+  --c-wash: #eef1f4;
+  --c-quote: #f6f1e6;
+  --c-act: #25507a;
+  --c-act-deep: #1b3d5e;
+  --c-crit: #9a2b1e;
+  --c-high: #7a5300;
 }
 
 @theme inline {
@@ -21,21 +35,30 @@
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-burnt: var(--burnt);
-  --font-display: var(--font-anton);
-  --font-voice: var(--font-archivo);
+  --font-display: var(--font-public);
+  --font-voice: var(--font-public);
   --font-document: var(--font-tinos);
+  --color-ground: var(--c-ground);
+  --color-graphite: var(--c-graphite);
+  --color-soft: var(--c-soft);
+  --color-rule: var(--c-rule);
+  --color-wash: var(--c-wash);
+  --color-quote: var(--c-quote);
+  --color-act: var(--c-act);
+  --color-crit: var(--c-crit);
+  --color-high: var(--c-high);
 }
 
 html {
-  background: var(--spot);
+  background: var(--c-ground);
   color-scheme: light;
-  scrollbar-color: var(--ink) var(--spot);
+  scrollbar-color: #b9bec5 var(--c-ground);
 }
 
 body {
-  background: var(--spot);
-  color: var(--ink);
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  background: var(--c-ground);
+  color: var(--c-graphite);
+  font-family: var(--font-public), ui-sans-serif, system-ui, sans-serif;
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -91,7 +114,7 @@ a {
 /* ── Type ─────────────────────────────────────────────────────────────── */
 
 .display {
-  font-family: var(--font-anton), ui-sans-serif, sans-serif;
+  font-family: var(--font-public), ui-sans-serif, sans-serif;
   font-weight: 400;
   line-height: 0.92;
   letter-spacing: -0.012em;
@@ -101,7 +124,7 @@ a {
 }
 
 .label {
-  font-family: var(--font-archivo), ui-sans-serif, sans-serif;
+  font-family: var(--font-public), ui-sans-serif, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 700;
@@ -272,7 +295,7 @@ a {
    largest thing on screen and stays there for twenty minutes.            */
 
 .mark {
-  font-family: var(--font-archivo), ui-sans-serif, sans-serif;
+  font-family: var(--font-public), ui-sans-serif, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 700;
@@ -350,7 +373,7 @@ a {
   border-radius: 0;
   width: 100%;
   /* 1rem keeps a phone from zooming the page when the control takes focus. */
-  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-public), ui-sans-serif, system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.3;
   padding: 0.8rem 4.4rem 0.8rem 1rem;
@@ -403,4 +426,199 @@ a {
   color: var(--ink);
   border: 2px solid var(--spot);
   padding: 0.3rem 0.7rem;
+}
+
+/* ── The review screen: a report, not a poster (direction A) ─────────────
+   Scoped to `.calm` so the landing page keeps its own world until it is
+   redesigned on purpose. Inside, Redline speaks in Public Sans at normal
+   case; the contract still speaks in Tinos on cream, so the two registers
+   survive greyscale exactly as before. Severity keeps its length and its
+   word, and takes a colour only as a third carrier.                       */
+
+.calm {
+  background: var(--c-ground);
+  color: var(--c-graphite);
+  font-family: var(--font-public), ui-sans-serif, system-ui, sans-serif;
+  scrollbar-color: #b9bec5 var(--c-ground);
+}
+html:has(.calm),
+body:has(.calm) {
+  background: var(--c-ground);
+  scrollbar-color: #b9bec5 var(--c-ground);
+}
+.calm ::selection,
+.calm .sheet ::selection {
+  background: #cfe0f0;
+  color: var(--c-graphite);
+}
+.calm :focus-visible,
+.calm .sheet :focus-visible {
+  outline: 2px solid var(--c-act);
+  outline-offset: 2px;
+}
+.calm ::-webkit-scrollbar-track,
+.calm .sheet-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.calm ::-webkit-scrollbar-thumb,
+.calm .sheet-scroll::-webkit-scrollbar-thumb {
+  background: #b9bec5;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.calm .label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.calm .display {
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+/* Text actions: the action colour, underlined on hover. */
+.calm .mark {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--c-act);
+  text-underline-offset: 0.22em;
+}
+.calm .mark:hover {
+  color: var(--c-act-deep);
+  background: none;
+  text-decoration: underline;
+}
+.calm .mark:disabled,
+.calm .mark:disabled:hover {
+  color: color-mix(in srgb, var(--c-soft) 60%, transparent);
+  text-decoration: none;
+}
+
+/* The one solid control: square, unskewed, the action colour. */
+.calm .slug,
+.calm .slug-on-ink {
+  transform: none;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: var(--c-act);
+  color: #fff;
+  border: 1px solid var(--c-act);
+  font-size: 0.875rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.calm .slug > * {
+  transform: none;
+}
+.calm .slug:hover:not(:disabled),
+.calm .slug-on-ink:hover:not(:disabled) {
+  background: var(--c-act-deep);
+  border-color: var(--c-act-deep);
+  color: #fff;
+}
+.calm .slug:disabled,
+.calm .slug-on-ink:disabled {
+  background: var(--c-wash);
+  border-color: var(--c-rule);
+  color: color-mix(in srgb, var(--c-soft) 80%, transparent);
+  cursor: not-allowed;
+}
+.calm .slug-quiet {
+  background: transparent;
+  color: var(--c-act);
+}
+.calm .slug-quiet:hover:not(:disabled) {
+  background: var(--c-wash);
+  color: var(--c-act-deep);
+  border-color: var(--c-act-deep);
+}
+
+.calm .state-select {
+  font-family: var(--font-public), ui-sans-serif, system-ui, sans-serif;
+  padding: 0.6rem 2.6rem 0.6rem 0.8rem;
+  background: #fff;
+  color: var(--c-graphite);
+  border: 1px solid #a9afb7;
+}
+.calm .state-select:hover {
+  background: #fff;
+  border-color: var(--c-graphite);
+}
+.calm .state-field::after {
+  display: none;
+}
+.calm .state-field::before {
+  right: 0.9rem;
+  background: var(--c-graphite);
+}
+.calm .state-stamp {
+  background: var(--c-wash);
+  color: var(--c-graphite);
+  border: 1px solid var(--c-rule);
+  padding: 0.2rem 0.55rem;
+}
+
+/* The document window: the frame keeps its travel, in graphite. */
+.calm .window-mark {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-color: var(--c-graphite);
+}
+.calm .window-mark::before {
+  width: 4px;
+  background: var(--c-act);
+}
+.calm .halftone-paper {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--c-graphite) 12%, transparent) 1px,
+    transparent 1px
+  );
+  background-color: color-mix(in srgb, var(--c-quote) 55%, transparent);
+}
+.calm .sheet {
+  background-image: none;
+}
+
+/* Severity in the findings table: the bar's length is the signal; the
+   colour repeats it for readers who have colour. */
+.calm .sev-bar {
+  height: 6px;
+}
+
+/* The step a reader is in, kept in view from wherever they have scrolled. */
+.calm .step-link[aria-current="true"] {
+  background: var(--c-wash);
+  color: var(--c-graphite);
+}
+.calm .step-link[aria-current="true"] .step-dot {
+  background: var(--c-act);
+  border-color: var(--c-act);
+  color: #fff;
+}
+
+/* The landing page's closing band: the one dark plate in the report world,
+   so the page ends anchored rather than trailing off. */
+.calm .close-band {
+  background: var(--c-graphite);
+  color: #fff;
+}
+.calm .close-band :focus-visible {
+  outline-color: #fff;
+}
+.calm .slug-light {
+  background: #fff;
+  color: var(--c-graphite);
+  border-color: #fff;
+}
+.calm .slug-light:hover:not(:disabled) {
+  background: var(--c-wash);
+  color: var(--c-graphite);
+  border-color: var(--c-wash);
 }

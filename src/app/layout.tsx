@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import { Anton, Archivo, Tinos } from "next/font/google";
+import { Public_Sans, Tinos } from "next/font/google";
 import "./globals.css";
 
-const anton = Anton({
-  variable: "--font-anton",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const archivo = Archivo({
-  variable: "--font-archivo",
+// Redline's own voice: a plain public-service sans, so the product reads as
+// a report rather than a poster.
+const publicSans = Public_Sans({
+  variable: "--font-public",
   subsets: ["latin"],
 });
 
@@ -30,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${anton.variable} ${archivo.variable} ${tinos.variable} h-full antialiased`}
+      className={`${tinos.variable} ${publicSans.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>

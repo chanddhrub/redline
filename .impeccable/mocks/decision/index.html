@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redline — four directions for the review screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&family=Public+Sans:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#E9E8E4;color:#1d1d1b;font:16px/1.5 "Public Sans",system-ui,sans-serif;padding:48px 32px 96px}
+  .intro{max-width:1180px;margin:0 auto 40px}
+  .intro h1{font-size:28px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px}
+  .intro p{max-width:72ch;color:#45443f}
+  .intro ul{margin:12px 0 0 20px;color:#45443f;max-width:72ch}
+  .option{max-width:1180px;margin:0 auto 72px}
+  .option header{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:baseline;margin-bottom:16px}
+  .option .letter{grid-row:span 2;font-size:44px;font-weight:700;line-height:1}
+  .option h2{font-size:22px;font-weight:700}
+  .option .tag{font-size:14px;font-weight:600;color:#5c5b55}
+  .option .why{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px;font-size:14.5px;color:#3b3a35}
+  .option .why b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#5c5b55;margin-bottom:2px}
+  .frame{border:1px solid #c9c7c0;background:#fff;height:700px;overflow:hidden;position:relative;box-shadow:0 1px 0 #c9c7c0}
+  .cite{font-family:Tinos,Times,serif}
+  button{font:inherit;cursor:pointer}
+  .note{font-size:12px;color:#5c5b55;margin-top:6px}
+
+  /* ============ A. LAB REPORT ============ */
+  .A{--paper:#FBFAF7;--ink:#1F2328;--soft:#5A6068;--rule:#D9DCE0;--quote:#F6F1E6;--crit:#9A2B1E;--high:#7A5300;--act:#25507A;
+     font-family:"Public Sans",sans-serif;background:var(--paper);color:var(--ink);display:grid;grid-template-columns:208px 1fr;height:100%}
+  .A nav{border-right:1px solid var(--rule);padding:22px 0}
+  .A .brand{font-weight:700;font-size:17px;letter-spacing:-.01em;padding:0 22px 18px;border-bottom:1px solid var(--rule)}
+  .A .brand span{display:block;font-weight:400;font-size:12.5px;color:var(--soft);margin-top:2px}
+  .A nav ol{list-style:none;padding:14px 0}
+  .A nav li{display:flex;gap:10px;align-items:center;padding:9px 22px;font-size:14.5px;color:var(--soft)}
+  .A nav li i{font-style:normal;width:20px;height:20px;border:1px solid var(--rule);border-radius:50%;display:grid;place-items:center;font-size:11px}
+  .A nav li.on{color:var(--ink);font-weight:600;background:#E6EBF1}
+  .A nav li.on i{background:var(--act);border-color:var(--act);color:#fff}
+  .A main{overflow:auto;padding:0 36px 40px}
+  .A .guide{position:sticky;top:0;background:var(--paper);display:flex;justify-content:space-between;font-size:12.5px;color:var(--soft);padding:16px 0 10px;border-bottom:2px solid var(--ink);z-index:1}
+  .A .guide b{color:var(--ink);font-weight:600}
+  .A h3{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:22px 0 4px}
+  .A .lede{color:var(--soft);font-size:15px;max-width:68ch}
+  .A .summary{display:flex;gap:28px;margin:18px 0 22px;font-size:14px}
+  .A .summary div b{display:block;font-size:24px;font-weight:700}
+  .A table{width:100%;border-collapse:collapse;font-size:14.5px}
+  .A th{text-align:left;font-size:12px;font-weight:600;color:var(--soft);padding:8px 10px;border-bottom:1px solid var(--rule)}
+  .A td{padding:13px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+  .A tr.row{cursor:pointer}
+  .A tr.row:hover td{background:#F2F3F4}
+  .A tr.row.open td{background:#EEF1F4;border-bottom-color:transparent}
+  .A .code{font-variant-numeric:tabular-nums;color:var(--soft);width:56px}
+  .A .flag{width:120px;font-weight:700;font-size:12.5px;letter-spacing:.04em}
+  .A .flag.c{color:var(--crit)} .A .flag.h{color:var(--high)}
+  .A .ok{color:#2F6B45;font-size:13px;width:130px}
+  .A .detail td{background:#EEF1F4;padding:0 10px 20px}
+  .A .detail .grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+  .A .q{background:var(--quote);border-left:3px solid var(--ink);padding:12px 16px;font-family:Tinos,serif;font-size:15.5px;line-height:1.55}
+  .A .q small{display:block;font-family:"Public Sans";font-size:11.5px;color:var(--soft);margin-bottom:6px}
+  .A dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px;margin-top:12px}
+  .A dt{color:var(--soft)}
+  .A .counter{background:#fff;border:1px solid var(--rule);padding:12px 14px;font-size:14px}
+  .A .counter b{display:block;font-size:12px;color:var(--soft);font-weight:600;margin-bottom:4px}
+  .A .btns{display:flex;gap:8px;margin-top:10px}
+  .A .btn{border:1px solid var(--act);background:var(--act);color:#fff;padding:7px 12px;font-size:13px;font-weight:600}
+  .A .btn.g{background:transparent;color:var(--act)}
+  .A .receipt{margin-top:20px;font-size:13px;color:var(--soft);border-top:1px solid var(--rule);padding-top:10px}
+
+  /* ============ B. MARGIN NOTES ============ */
+  .B{--bg:#FFFFFF;--ink:#1B2433;--soft:#5D6675;--rule:#E3E6EB;--hl:#FFF0A8;--hlline:#E2B900;--crit:#A33224;--act:#1B2433;
+     font-family:"Instrument Sans",sans-serif;background:#F4F5F7;color:var(--ink);height:100%;display:grid;grid-template-rows:56px 1fr}
+  .B .bar{background:#fff;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:18px;padding:0 24px;font-size:14px}
+  .B .bar .brand{font-weight:700;font-size:16px;margin-right:auto}
+  .B .bar .brand span{font-weight:400;color:var(--soft);margin-left:10px}
+  .B .step{display:flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:4px 6px}
+  .B .step button{border:0;background:transparent;width:28px;height:28px;border-radius:50%;font-size:16px}
+  .B .step button:hover{background:#EEF0F3}
+  .B .step span{min-width:220px;text-align:center;font-weight:600}
+  .B .tabs{display:flex;gap:4px}
+  .B .tabs a{padding:6px 10px;border-radius:6px;color:var(--soft);text-decoration:none}
+  .B .tabs a.on{background:var(--ink);color:#fff}
+  .B .body{display:grid;grid-template-columns:1fr 380px;overflow:hidden}
+  .B .doc{overflow:auto;padding:28px 0}
+  .B .page{background:#fff;max-width:600px;margin:0 auto;padding:44px 52px;box-shadow:0 1px 3px rgba(20,30,50,.08);font-family:Tinos,serif;font-size:16px;line-height:1.65}
+  .B .page h4{font-family:"Instrument Sans";font-size:13px;margin:18px 0 4px}
+  .B mark{background:transparent;border-bottom:2px solid var(--hlline);padding:1px 0;cursor:pointer}
+  .B mark.on{background:var(--hl)}
+  .B aside{background:#fff;border-left:1px solid var(--rule);overflow:auto;padding:18px}
+  .B .ov{font-size:13px;color:var(--soft);margin-bottom:12px}
+  .B .card{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+  .B .card .t{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14.5px}
+  .B .chip{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+  .B .chip.c{color:#fff;background:var(--crit);border-color:var(--crit)}
+  .B .chip.h{color:var(--ink)}
+  .B .card .more{display:none;font-size:14px;margin-top:10px}
+  .B .card.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+  .B .card.on .more{display:block}
+  .B .more p{margin-bottom:10px}
+  .B .more .lbl{font-size:11.5px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+  .B .more .co{background:#F4F5F7;border-radius:8px;padding:10px 12px}
+  .B .more button{margin-top:8px;border:0;background:var(--ink);color:#fff;border-radius:6px;padding:6px 12px;font-size:13px;font-weight:600}
+
+  /* ============ C. REDLINE, TURNED DOWN ============ */
+  .C{--paper:#FFF8EF;--ink:#14110F;--soft:#5E4B3C;--rule:#E8DACB;--spot:#E8541C;--doc:#FFFDF8;
+     font-family:Archivo,sans-serif;background:var(--paper);color:var(--ink);height:100%;display:grid;grid-template-rows:auto 1fr}
+  .C .top{display:flex;align-items:center;gap:28px;padding:16px 32px;border-bottom:1px solid var(--rule)}
+  .C .logo{font-family:Anton;font-size:26px;letter-spacing:.01em;line-height:1}
+  .C .logo em{font-style:normal;color:var(--spot)}
+  .C .file{font-size:13px;color:var(--soft);margin-right:auto}
+  .C .tabs{display:flex;gap:24px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .C .tabs a{color:var(--soft);text-decoration:none;padding:6px 0;border-bottom:3px solid transparent}
+  .C .tabs a.on{color:var(--ink);border-color:var(--spot)}
+  .C .tabs sup{font-size:10px;background:var(--ink);color:var(--paper);padding:2px 6px;margin-left:4px}
+  .C .wrap{display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .C .list{overflow:auto;padding:24px 32px;border-right:1px solid var(--rule)}
+  .C .list h3{font-family:Anton;font-weight:400;font-size:34px;line-height:.95;text-transform:uppercase;margin-bottom:6px}
+  .C .list .sub{color:var(--soft);font-size:14px;margin-bottom:18px}
+  .C .f{border-top:1px solid var(--rule);padding:14px 0;cursor:pointer}
+  .C .f:last-child{border-bottom:1px solid var(--rule)}
+  .C .f .h{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center}
+  .C .bar{height:6px;background:var(--ink)}
+  .C .bar.c{width:44px;background:var(--spot)} .C .bar.h{width:22px}
+  .C .f .ti{font-weight:600;font-size:16px}
+  .C .f .sv{font-size:11px;font-weight:700;letter-spacing:.12em}
+  .C .f .bd{display:none;padding:12px 0 2px 56px;font-size:14.5px;line-height:1.55}
+  .C .f.on .bd{display:block}
+  .C .f.on .ti{text-decoration:underline;text-decoration-color:var(--spot);text-decoration-thickness:2px;text-underline-offset:4px}
+  .C .bd .lbl{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--soft);text-transform:uppercase;margin:10px 0 3px}
+  .C .doc{overflow:auto;padding:24px 32px;background:var(--doc)}
+  .C .doc .cap{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--soft);text-transform:uppercase;margin-bottom:12px}
+  .C .doc p{font-family:Tinos,serif;font-size:15.5px;line-height:1.65;margin-bottom:14px;color:#3a332d}
+  .C .doc mark{background:#FFE2CF;color:var(--ink);box-shadow:inset 0 -2px 0 var(--spot)}
+
+  /* ============ D. STANDARD APP ============ */
+  .D{--bg:#F5F6F8;--ink:#111827;--soft:#5F6672;--rule:#E5E7EB;--act:#2563EB;
+     font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);height:100%;display:grid;grid-template-columns:240px 1fr}
+  .D nav{background:#fff;border-right:1px solid var(--rule);padding:20px 14px}
+  .D .brand{font-weight:700;font-size:18px;padding:0 8px 20px}
+  .D nav a{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;color:var(--soft);text-decoration:none;font-size:14.5px;margin-bottom:2px}
+  .D nav a.on{background:#EFF4FF;color:var(--act);font-weight:600}
+  .D nav a .ck{width:18px;height:18px;border-radius:50%;background:#DCFCE7;color:#15803D;font-size:11px;display:grid;place-items:center}
+  .D nav a .n{width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;font-size:10.5px;display:grid;place-items:center}
+  .D main{overflow:auto;padding:28px 36px}
+  .D h3{font-size:24px;font-weight:700;margin-bottom:4px}
+  .D .lede{color:var(--soft);margin-bottom:20px}
+  .D .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  .D .stat{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:14px 16px;font-size:13.5px;color:var(--soft)}
+  .D .stat b{display:block;font-size:22px;color:var(--ink)}
+  .D .card{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:16px 18px;margin-bottom:10px}
+  .D .card .t{display:flex;align-items:center;gap:10px;font-weight:600}
+  .D .pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+  .D .pill.c{background:#FEE2E2;color:#991B1B} .D .pill.h{background:#FEF3C7;color:#92400E}
+  .D .card p{color:var(--soft);font-size:14px;margin:6px 0 10px}
+  .D .card .q{font-family:Tinos,serif;background:#F9FAFB;border-radius:8px;padding:10px 12px;font-size:14.5px;border:1px solid var(--rule)}
+  .D .card .row{display:flex;gap:8px;margin-top:10px}
+  .D .card .row button{border:1px solid var(--rule);background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600}
+  .D .card .row button.p{background:var(--act);border-color:var(--act);color:#fff}
+
+  .compare{max-width:1180px;margin:0 auto;background:#fff;border:1px solid #c9c7c0;padding:24px 28px}
+  .compare h2{font-size:20px;margin-bottom:12px}
+  .compare table{width:100%;border-collapse:collapse;font-size:14.5px}
+  .compare th,.compare td{text-align:left;padding:10px;border-bottom:1px solid #e3e1da;vertical-align:top}
+  .compare th{font-size:12.5px;color:#5c5b55;font-weight:600}
+</style>
+</head>
+<body>
+
+<section class="intro">
+  <h1>Redline: four directions for the review screen</h1>
+  <p>Each mock uses the synthetic Northwind offer letter from the demo. Click rows, cards and arrows: they open and close. Three rules hold in every option, because the product depends on them:</p>
+  <ul>
+    <li>The contract's own words are always set in the serif (Tinos), and Redline's words never are. Readers can tell them apart without relying on colour.</li>
+    <li>Severity is always spelled out as a word, never shown by colour alone.</li>
+    <li>Only one finding is open at a time. The rest stay one line long, so the page never shows everything at once.</li>
+  </ul>
+</section>
+
+<!-- ================= A ================= -->
+<section class="option">
+  <header><div class="letter">A</div><h2>Results report: findings as a table, one row open at a time</h2><div class="tag">Calm white and graphite · colour only in the severity column</div></header>
+  <div class="frame">
+    <div class="A">
+      <nav>
+        <div class="brand">Redline<span>northwind-offer.pdf</span></div>
+        <ol>
+          <li><i>1</i>Summary</li>
+          <li class="on"><i>2</i>Findings</li>
+          <li><i>3</i>Ask the document</li>
+          <li><i>4</i>Your red lines</li>
+          <li><i>5</i>What was checked</li>
+        </ol>
+      </nav>
+      <main>
+        <div class="guide"><span><b>Findings 1–4 of 4</b> · Non-compete → Signing bonus</span><span>California · Not legal advice</span></div>
+        <h3>4 clauses could hurt you</h3>
+        <p class="lede">Ranked by how hard each one is to get out of, then by money. Open a row to see the sentence it came from and a counter-offer.</p>
+        <div class="summary"><div><b>2</b>Critical</div><div><b>2</b>High</div><div><b>4 of 4</b>quotes found in your document</div></div>
+        <table>
+          <thead><tr><th>Code</th><th>Clause</th><th>Severity</th><th>Source</th></tr></thead>
+          <tbody id="A-rows"></tbody>
+        </table>
+        <p class="receipt">Checked: non-compete, arbitration, IP assignment, equity and bonus repayment. Other clause types were not reviewed.</p>
+      </main>
+    </div>
+  </div>
+  <div class="why">
+    <div><b>Fixes "busy"</b>You see the four findings first, as a list you can scan. Details appear only for the row you open, right where you clicked.</div>
+    <div><b>Fixes "too red"</b>The page is off-white and graphite, and colour appears only in the severity column. The quote sits on a pale cream block, like a page from your document.</div>
+    <div><b>Cost</b>It looks less like a brand. The full document goes behind a "Show in document" link instead of always being on screen.</div>
+  </div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="option">
+  <header><div class="letter">B</div><h2>Margin notes: your document in the middle, findings in the margin</h2><div class="tag">White page, highlighter yellow, navy ink · a red chip only on Critical</div></header>
+  <div class="frame">
+    <div class="B">
+      <div class="bar">
+        <div class="brand">Redline<span>northwind-offer.pdf</span></div>
+        <div class="step"><button id="B-prev" aria-label="Previous finding">‹</button><span id="B-label">1 of 4 · Non-compete</span><button id="B-next" aria-label="Next finding">›</button></div>
+        <div class="tabs"><a class="on" href="#B">Findings</a><a href="#B">Ask</a><a href="#B">Red lines</a></div>
+      </div>
+      <div class="body">
+        <div class="doc"><div class="page" id="B-page"></div></div>
+        <aside><p class="ov">4 findings · 2 Critical, 2 High · every quote found in your document</p><div id="B-cards"></div></aside>
+      </div>
+    </div>
+  </div>
+  <div class="why">
+    <div><b>Fixes "busy"</b>The arrows walk you through the findings in order. Each step scrolls the document to the highlighted sentence and opens its note, like a reviewer's comments in Word or Google Docs.</div>
+    <div><b>Fixes "too red"</b>Most of the screen is a white page. Highlighter yellow marks the sentences, and red appears only on a Critical chip.</div>
+    <div><b>Cost</b>It's the most familiar of the four, and so the least distinctive. On a phone, the margin becomes a bottom sheet.</div>
+  </div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="option">
+  <header><div class="letter">C</div><h2>Redline, quieter: same brand, turned way down</h2><div class="tag">Warm off-white ground · orange becomes the accent, not the floor</div></header>
+  <div class="frame">
+    <div class="C">
+      <div class="top">
+        <div class="logo">RED<em>LINE</em></div>
+        <div class="file">northwind-offer.pdf · parsed in your browser</div>
+        <nav class="tabs"><a class="on" href="#C">Findings<sup>4</sup></a><a href="#C">Ask</a><a href="#C">Red lines</a><a href="#C">What was checked</a></nav>
+      </div>
+      <div class="wrap">
+        <div class="list"><h3>Four clauses to push back on</h3><p class="sub">Ranked by how hard each is to escape, then money. Open one; the document follows.</p><div id="C-list"></div></div>
+        <div class="doc"><div class="cap">Your document · the open finding is marked</div><div id="C-doc"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="why">
+    <div><b>Fixes "busy"</b>Tabs show one job at a time. The list on the left is one line per finding, and the document on the right scrolls to the sentence of the finding you open.</div>
+    <div><b>Fixes "too red"</b>Orange drops from the whole background to a few accents: the logo, the active tab, and the Critical bar. Anton, Archivo and the serif stay, so it still looks like Redline.</div>
+    <div><b>Cost</b>It's the smallest change, so it's the least risky. But it's still a two-column screen, which is a bit tighter on a laptop.</div>
+  </div>
+</section>
+
+<!-- ================= D ================= -->
+<section class="option">
+  <header><div class="letter">D</div><h2>Standard app: step sidebar, cards, one blue action colour</h2><div class="tag">The conventional SaaS look, played straight</div></header>
+  <div class="frame">
+    <div class="D">
+      <nav>
+        <div class="brand">Redline</div>
+        <a href="#D"><span class="ck">✓</span>Upload</a>
+        <a href="#D"><span class="ck">✓</span>Your state</a>
+        <a href="#D"><span class="ck">✓</span>Red lines</a>
+        <a href="#D" class="on"><span class="n">4</span>Findings</a>
+        <a href="#D"><span class="n">5</span>Ask the document</a>
+      </nav>
+      <main>
+        <h3>Findings</h3>
+        <p class="lede">northwind-offer.pdf · California</p>
+        <div class="stats"><div class="stat"><b>2</b>Critical</div><div class="stat"><b>2</b>High</div><div class="stat"><b>4/4</b>Quotes verified</div></div>
+        <div id="D-cards"></div>
+      </main>
+    </div>
+  </div>
+  <div class="why">
+    <div><b>Fixes "busy"</b>A sidebar walks you through the steps, and each finding is its own card.</div>
+    <div><b>Fixes "too red"</b>The screen is grey and white, with blue for buttons. Severity uses soft red and amber pills.</div>
+    <div><b>Cost</b>It looks like every other contract tool, and this product's pitch is that it isn't one. Included so you can compare.</div>
+  </div>
+</section>
+
+<section class="compare">
+  <h2>Side by side</h2>
+  <table>
+    <tr><th></th><th>A · Results report</th><th>B · Margin notes</th><th>C · Redline, quieter</th><th>D · Standard app</th></tr>
+    <tr><td>How much it changes</td><td>New look and layout</td><td>New look and layout</td><td>Same brand, new layout</td><td>New look and layout</td></tr>
+    <tr><td>Easiest to scan</td><td>Best: a table you read top to bottom</td><td>Good: one finding at a time</td><td>Good: a one-line list</td><td>OK: cards get long</td></tr>
+    <tr><td>Checking a quote against the contract</td><td>Quote shown inline, full document one click away</td><td>Best: always right in the document</td><td>Document beside the list</td><td>Quote in the card only</td></tr>
+    <tr><td>On a phone</td><td>Table becomes a stacked list</td><td>Margin becomes a bottom sheet</td><td>Document goes behind a tab</td><td>Already a single column</td></tr>
+    <tr><td>Red on screen</td><td>Severity words only</td><td>One chip on Critical</td><td>Orange accents</td><td>Soft red pills</td></tr>
+  </table>
+</section>
+
+<script>
+const F = [
+ {code:"CR-1",sev:"Critical",title:"Non-compete runs 18 months across the whole country",
+  q:"For a period of eighteen (18) months following the termination of your employment for any reason, you shall not, directly or indirectly, engage in or provide services to any business that competes with the Company anywhere in the United States.",
+  m:"For a year and a half after you leave, including if they let you go, you cannot work for a competitor anywhere in the US. The sentence does not define which businesses compete.",
+  c:"Reduce the period to six months, limit it to named competitors in an appendix, and apply it only within 50 miles of your office. Strike it where employment ends without cause.",
+  d:[["Duration","18 months"],["Geography","United States"],["If laid off","Still applies"]]},
+ {code:"CR-2",sev:"Critical",title:"Arbitration only, and no class action",
+  q:"You and the Company agree that any dispute arising out of or relating to this Agreement or your employment shall be resolved exclusively by final and binding arbitration administered in Santa Clara County, California, and you waive any right to participate in any class, collective, or representative action.",
+  m:"You give up a court and a jury for anything arising from your employment, and you cannot join other employees in a shared claim.",
+  c:"Carve out discrimination, harassment and wage claims. Make it mutual, have the Company pay the arbitrator, and set the venue where you work.",
+  d:[["Scope","Any employment dispute"],["Venue","Santa Clara County"],["Group claims","Waived"]]},
+ {code:"HI-1",sev:"High",title:"Invention assignment reaches your own time",
+  q:"You agree to assign to the Company all right, title, and interest in any invention, work of authorship, or improvement that you conceive or reduce to practice during the term of your employment, whether or not developed using Company resources or during working hours.",
+  m:"Anything you make while employed belongs to the Company, including work on your own machine on a Sunday.",
+  c:"Limit it to work related to the Company's business or using its resources, and attach a schedule of your existing projects.",
+  d:[["Own time","Included"],["Own equipment","Included"],["Prior work","No schedule"]]},
+ {code:"HI-2",sev:"High",title:"Signing bonus repayable in full, gross",
+  q:"If your employment ends for any reason within twelve (12) months of your start date, you agree to repay the full gross amount of the signing bonus within thirty (30) days of your last day of employment.",
+  m:"Leave or be let go inside a year and you owe the whole $25,000 back, the gross figure, not what reached your account.",
+  c:"Prorate by months served, cap it at the net amount received, and remove it where the Company ends employment without cause.",
+  d:[["Amount","$25,000 gross"],["Window","12 months"],["Repay within","30 days"]]}
+];
+const intro="We are delighted to offer you the position of Senior Software Engineer at Northwind Analytics, Inc. (the “Company”), reporting to the VP of Engineering. Your annual base salary will be $186,000, paid semi-monthly.";
+const order=[3,2,0,1]; // document order: bonus, ip, noncompete, arbitration
+const heads=["1. Signing bonus","3. Confidentiality and inventions","4. Non-competition","5. Dispute resolution"];
+
+/* A */
+(function(){
+  const tb=document.getElementById("A-rows");let open=0;
+  function draw(){tb.innerHTML=F.map((f,i)=>{
+    const c=f.sev==="Critical"?"c":"h";
+    let r=`<tr class="row ${i===open?"open":""}" data-i="${i}"><td class="code">${f.code}</td><td><b style="font-weight:600">${f.title}</b><div style="color:var(--soft);font-size:13.5px;margin-top:2px">${f.m.split(". ")[0].replace(/\.$/,"")}.</div></td><td class="flag ${c}">${c==="c"?"▲▲ CRITICAL":"▲ HIGH"}</td><td class="ok">✓ Quote found</td></tr>`;
+    if(i===open) r+=`<tr class="detail"><td></td><td colspan="3"><div class="grid"><div><div class="q"><small>From your document · section ${heads[order.indexOf(i)].split(".")[0]}</small>${f.q}</div><dl>${f.d.map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join("")}</dl></div><div><div class="counter"><b>Counter-offer to send back</b>${f.c}</div><div class="btns"><button class="btn">Copy counter-offer</button><button class="btn g">Show in document</button></div></div></div></td></tr>`;
+    return r}).join("");
+    tb.querySelectorAll("tr.row").forEach(t=>t.onclick=()=>{const i=+t.dataset.i;open=open===i?-1:i;draw()});}
+  draw();
+})();
+
+/* B */
+(function(){
+  let cur=0;const page=document.getElementById("B-page"),cards=document.getElementById("B-cards"),lab=document.getElementById("B-label");
+  page.innerHTML=`<p>${intro}</p>`+order.map((fi,k)=>`<h4>${heads[k]}</h4><p><mark data-i="${fi}">${F[fi].q}</mark></p>`).join("");
+  function draw(){
+    cards.innerHTML=F.map((f,i)=>`<div class="card ${i===cur?"on":""}" data-i="${i}"><div class="t"><span class="chip ${f.sev==="Critical"?"c":"h"}">${f.sev.toUpperCase()}</span>${f.title}</div><div class="more"><p>${f.m}</p><div class="lbl">Counter-offer</div><div class="co">${f.c}</div><button>Copy counter-offer</button></div></div>`).join("");
+    page.querySelectorAll("mark").forEach(m=>m.classList.toggle("on",+m.dataset.i===cur));
+    lab.textContent=`${cur+1} of 4 · ${["Non-compete","Arbitration","Invention assignment","Signing bonus"][cur]}`;
+    cards.querySelectorAll(".card").forEach(c=>c.onclick=()=>go(+c.dataset.i));
+    const m=page.querySelector(`mark[data-i="${cur}"]`);const d=page.parentElement;d.scrollTo({top:m.offsetTop-120,behavior:"smooth"});
+  }
+  function go(i){cur=(i+4)%4;draw()}
+  document.getElementById("B-prev").onclick=()=>go(cur-1);document.getElementById("B-next").onclick=()=>go(cur+1);
+  page.querySelectorAll("mark").forEach(m=>m.onclick=()=>go(+m.dataset.i));
+  draw();
+})();
+
+/* C */
+(function(){
+  let cur=0;const list=document.getElementById("C-list"),doc=document.getElementById("C-doc");
+  function draw(){
+    list.innerHTML=F.map((f,i)=>{const c=f.sev==="Critical"?"c":"h";return `<div class="f ${i===cur?"on":""}" data-i="${i}"><div class="h"><div class="bar ${c}"></div><div class="ti">${f.title}</div><div class="sv">${f.sev.toUpperCase()}</div></div><div class="bd">${f.m}<div class="lbl">Counter-offer</div>${f.c}</div></div>`}).join("");
+    doc.innerHTML=`<p>${intro}</p>`+order.map((fi)=>`<p>${fi===cur?`<mark>${F[fi].q}</mark>`:F[fi].q}</p>`).join("");
+    list.querySelectorAll(".f").forEach(e=>e.onclick=()=>{cur=+e.dataset.i;draw()});
+    const m=doc.querySelector("mark");doc.scrollTo({top:m.offsetTop-80,behavior:"smooth"});
+  }
+  draw();
+})();
+
+/* D */
+document.getElementById("D-cards").innerHTML=F.map(f=>`<div class="card"><div class="t"><span class="pill ${f.sev==="Critical"?"c":"h"}">${f.sev}</span>${f.title}</div><p>${f.m}</p><div class="q">“${f.q}”</div><div class="row"><button class="p">Copy counter-offer</button><button>Show in document</button></div></div>`).join("");
+</script>
+</body>
+</html>

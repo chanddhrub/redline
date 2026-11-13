@@ -88,3 +88,16 @@ screen and explicitly labelled as not from the document.
 Open: whether the question box shares the finding stack's column or takes the
 document pane's foot. Not resolved here; it needs the result screen's real
 density, which does not exist yet.
+
+## Direction contract (2026-11-12, supersedes "Selected direction" above)
+
+THESIS: a results report you can check. The findings lead as one-line rows;
+the evidence opens in place.
+WORLD: graphite on warm off-white, Public Sans, 1px rules, square corners.
+Cream and Tinos stay reserved for the reader's own words.
+FIRST VIEWPORT: after analysis, "N clauses could hurt you" and the ranked
+table, first row open with its quote and counter-offer.
+SIGNATURE: "Show in document" opens the document panel at the cited sentence.
+SEVERITY: bar length + word + colour, in that order of authority.
+NAVIGATION: step menu marks the section in view; the document panel is open
+while it is the work and closed once findings exist.
