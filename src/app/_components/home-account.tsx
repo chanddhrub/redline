@@ -76,7 +76,7 @@ export function HomeAccount() {
       {open ? (
         <div
           id={panelId}
-          className="absolute right-0 top-full z-30 mt-3 w-[min(22rem,calc(100vw-2.5rem))] border border-rule bg-white p-4 shadow-[0_8px_24px_rgba(31,35,40,0.12)]"
+          className="absolute right-0 top-full z-30 mt-3 w-[min(22rem,calc(100vw-2.5rem))] border border-rule bg-white p-4 shadow-[0_8px_24px_rgba(31,35,40,0.12)] overflow-hidden rounded-2xl"
         >
           {state.kind === "signed-out" ? (
             <form
@@ -146,7 +146,7 @@ export function HomeAccount() {
           ) : null}
 
           {account.trouble ? (
-            <p className="mt-3 border border-rule px-3 py-2 text-[0.875rem] leading-relaxed text-graphite" role="status">
+            <p className="mt-3 border border-rule px-3 py-2 text-[0.875rem] leading-relaxed text-graphite overflow-hidden rounded-2xl" role="status">
               {account.trouble}
             </p>
           ) : null}

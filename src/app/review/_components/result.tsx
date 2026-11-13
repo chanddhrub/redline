@@ -91,7 +91,7 @@ export function CitedPanel({
   className?: string;
 }) {
   return (
-    <div className={`border border-rule bg-quote ${className}`}>
+    <div className={`border border-rule bg-quote ${className} overflow-hidden rounded-2xl`}>
       <p className="tabular px-4 pt-2.5 text-[0.75rem] font-semibold text-soft">
         {header} · characters {citation.span.start.toLocaleString()}–
         {citation.span.end.toLocaleString()}
@@ -127,7 +127,7 @@ export function NotFromDocument({
 }) {
   if (statements.length === 0) return null;
   return (
-    <div className="border border-dashed border-soft bg-white">
+    <div className="border border-dashed border-soft bg-white overflow-hidden rounded-2xl">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-dashed border-soft px-3 py-1.5">
         <p className="label text-graphite">Not from your document</p>
         {worksIn ? (
@@ -203,12 +203,12 @@ function Summary({
         {claims.map((claim, index) => {
           const active = selected?.kind === "claim" && selected.index === index;
           return (
-            <li key={index} className={`border-b border-rule ${active ? "bg-wash" : ""}`}>
+            <li key={index} className={`border-b ${active ? "rounded-2xl border-transparent bg-wash" : "border-rule"}`}>
               <button
                 type="button"
                 aria-expanded={active}
                 onClick={() => onSelect(active ? null : { kind: "claim", index })}
-                className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors duration-150 hover:bg-wash"
+                className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors duration-150 hover:bg-wash rounded-2xl"
               >
                 <Chevron open={active} />
                 <span className="block max-w-[64ch] text-[0.9375rem] leading-relaxed text-graphite">
@@ -318,7 +318,7 @@ function FlagRow({
   const detail = `flag-${flag.id}`;
 
   return (
-    <li className={`border-b border-rule ${active ? "bg-wash" : ""}`}>
+    <li className={`border-b ${active ? "rounded-2xl border-transparent bg-wash" : "border-rule"}`}>
       {promotion ? (
         <p className="px-3 pt-3 text-[0.8125rem] text-graphite @xl:pl-[4.75rem]">
           <span className="font-bold">Moved to the top:</span> this crosses your red line
@@ -331,7 +331,7 @@ function FlagRow({
         aria-expanded={active}
         aria-controls={detail}
         onClick={onSelect}
-        className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-3.5 text-left transition-colors duration-150 hover:bg-wash @xl:grid-cols-[3.25rem_minmax(0,1fr)_7.5rem_7rem]"
+        className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-3.5 text-left transition-colors duration-150 hover:bg-wash rounded-2xl @xl:grid-cols-[3.25rem_minmax(0,1fr)_7.5rem_7rem]"
       >
         <span className="tabular flex items-center gap-1.5 pt-0.5 text-[0.8125rem] text-soft">
           <Chevron open={active} />
@@ -376,7 +376,7 @@ function FlagRow({
             </div>
 
             <div className="min-w-0">
-              <div className="border border-rule bg-white px-4 py-3">
+              <div className="border border-rule bg-white px-4 py-3 overflow-hidden rounded-2xl">
                 <p className="text-[0.8125rem] font-semibold text-soft">
                   Counter-offer to send back
                 </p>
@@ -478,7 +478,7 @@ function Flags({
  */
 export function Receipt({ coverage }: { coverage: CoverageReceipt }) {
   return (
-    <div className="border border-rule bg-white">
+    <div className="border border-rule bg-white overflow-hidden rounded-2xl">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2.5">
         <h3 className="text-[0.9375rem] font-bold text-graphite">What was checked</h3>
         <p className="text-[0.8125rem] text-soft">And what was not</p>
@@ -541,7 +541,7 @@ export function Running({
   redLines: number;
 }) {
   return (
-    <div className="border border-rule" role="status" aria-live="polite">
+    <div className="border border-rule overflow-hidden rounded-2xl" role="status" aria-live="polite">
       <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {RUNNING_BECAUSE[reason]}
       </p>
@@ -648,7 +648,7 @@ export function Failed({
 }) {
   const copy = failureCopy(failure);
   return (
-    <div className="border border-rule" role="alert">
+    <div className="border border-rule overflow-hidden rounded-2xl" role="alert">
       <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {heading}
       </p>
@@ -740,7 +740,7 @@ export function AnswerPanel({
   onSelect: (selection: Selection) => void;
 }) {
   return (
-    <div className="border border-rule" aria-live="polite">
+    <div className="border border-rule overflow-hidden rounded-2xl" aria-live="polite">
       <p className="label border-b border-rule px-3 py-1.5 text-graphite">
         You asked
       </p>

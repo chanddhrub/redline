@@ -80,7 +80,7 @@ export function AccountPanel({
   const { state } = account;
 
   return (
-    <div className="border border-rule">
+    <div className="border border-rule overflow-hidden rounded-2xl">
       <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
         {state.kind === "signed-in" ? "Kept for your account" : "Kept in this tab only"}
       </p>
@@ -194,7 +194,7 @@ export function AccountPanel({
 
         {account.trouble ? (
           <p
-            className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite"
+            className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite overflow-hidden rounded-2xl"
             role="status"
           >
             {account.trouble}
@@ -327,7 +327,7 @@ function KeptDocumentPanel({ kept }: { kept: KeptControls }) {
 
       {note ? (
         <p
-          className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite"
+          className="max-w-[62ch] border border-rule px-3 py-2 font-voice text-[0.9375rem] leading-relaxed text-graphite overflow-hidden rounded-2xl"
           role="status"
         >
           {note}

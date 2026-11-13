@@ -8,20 +8,22 @@ colors:
   burnt: "#4A1200"
   tint: "#FF8A50"
   peach: "#FFC7A6"
-  report-ground: "#FBFAF7"
-  report-graphite: "#1F2328"
-  report-soft: "#565C64"
-  report-rule: "#D9DCE0"
-  report-field: "#A9AFB7"
-  report-wash: "#EEF1F4"
-  report-quote: "#F6F1E6"
-  report-act: "#25507A"
-  report-act-deep: "#1B3D5E"
-  report-crit: "#9A2B1E"
-  report-high: "#7A5300"
+  report-ground: "#FFFFFF"
+  report-graphite: "#141414"
+  report-soft: "#6B6B6B"
+  report-rule: "#EBEBEB"
+  report-field: "#C9C9C9"
+  report-wash: "#F5F5F5"
+  report-quote: "#F7F2E8"
+  report-act: "#141414"
+  report-act-deep: "#000000"
+  report-crit: "#B42318"
+  report-high: "#8A5A00"
   report-scroll: "#B9BEC5"
   report-select: "#CFE0F0"
   report-white: "#FFFFFF"
+  report-grey-tone: "#757575"
+  report-card-text: "#5C5C5C"
 typography:
   display:
     fontFamily: "Anton, ui-sans-serif, sans-serif"
@@ -96,91 +98,115 @@ typography:
     lineHeight: 1.62
     letterSpacing: "normal"
   report-hero:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "2.5rem"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.03em"
   report-hero-mid:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "3.5rem"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.03em"
   report-hero-lg:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "4.5rem"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.03em"
   report-close:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "2rem"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.03em"
   report-close-mid:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "2.75rem"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.03em"
   report-close-lg:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "3.5rem"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.03em"
+  report-hero-xl:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "5.25rem"
+    fontWeight: 650
+    lineHeight: 0.98
+    letterSpacing: "-0.045em"
+  report-hero-md:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "4.25rem"
+    fontWeight: 650
+    lineHeight: 0.98
+    letterSpacing: "-0.045em"
+  report-hero-sm:
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2.75rem"
+    fontWeight: 650
+    lineHeight: 0.98
+    letterSpacing: "-0.045em"
   report-title:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.375rem"
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "normal"
   report-subhead:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.0625rem"
     fontWeight: 700
     lineHeight: 1.3
     letterSpacing: "normal"
   report-row:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 600
     lineHeight: 1.35
     letterSpacing: "normal"
   report-body:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: "normal"
   report-control:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "normal"
   report-small:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.45
     letterSpacing: "normal"
   report-micro:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "normal"
   report-step:
-    fontFamily: "Public Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 400
     lineHeight: 1
     letterSpacing: "normal"
 rounded:
   none: "0px"
+  field: "12px"
+  card: "16px"
+  panel: "20px"
+  tile: "24px"
+  frame: "32px"
+  pill: "9999px"
 spacing:
   gutter-sm: "20px"
   gutter-lg: "32px"
@@ -556,6 +582,16 @@ a later session should fill it with a real duotone raster rather than conclude t
 world has no imagery. -->
 
 ## The report (live system: landing page and review screen)
+
+> **Restyled 2026-11-13 after Mobbin's design philosophy** (branch
+> `design/mobbin-style`, at the owner's request): pure white ground,
+> near-black #141414 type in one heavy grotesque (Geist, 650 at display sizes,
+> tight negative tracking), two-tone statements (claim in near-black, reason
+> in #757575), black primary and translucent-grey secondary **pill** buttons,
+> large radii (16–32px) on every surface, product shown inside a grey rounded
+> frame holding a white card with a soft shadow. The product rules below are
+> unchanged: cream and Tinos only for the reader's words; severity by length,
+> word and colour.
 
 **Creative North Star: "A results report you can check."** The product
 reads like a well-set lab report: graphite on a warm off-white, ruled rows,

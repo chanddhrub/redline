@@ -1032,7 +1032,7 @@ export function Shell() {
 
             {phase.kind === "idle" && pasting ? (
               <form
-                className="border border-rule bg-ground"
+                className="border border-rule bg-ground overflow-hidden rounded-2xl"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const bytes = new TextEncoder().encode(pasted);
@@ -1210,7 +1210,7 @@ function Rail({
                 href={`#${step.id}`}
                 aria-current={current === step.id ? "true" : undefined}
                 onClick={step.id === "document" ? onDocument : undefined}
-                className="step-link flex items-center gap-2.5 whitespace-nowrap px-2.5 py-1.5 text-[0.875rem] text-soft transition-colors duration-150 hover:text-graphite lg:px-5 lg:py-2.5 lg:text-[0.9375rem]"
+                className="step-link flex items-center gap-2.5 whitespace-nowrap px-2.5 py-1.5 text-[0.875rem] text-soft transition-colors duration-150 hover:text-graphite lg:mx-3 lg:px-3 lg:py-2.5 lg:text-[0.9375rem]"
               >
                 <span
                   className="step-dot tabular hidden h-5 w-5 shrink-0 place-items-center rounded-full border border-rule text-[0.6875rem] lg:grid"
@@ -1376,8 +1376,8 @@ function Dropzone({
           setDragging(false);
           onFiles(e.dataTransfer.files);
         }}
-        className={`border border-dashed px-5 py-12 text-center transition-colors duration-200 sm:py-16 ${
-          dragging ? "border-act bg-wash" : "border-[#a9afb7] bg-white"
+        className={`rounded-3xl border border-dashed px-5 py-12 text-center transition-colors duration-200 sm:py-16 ${
+          dragging ? "border-act bg-wash" : "border-[#c9c9c9] bg-white"
         }`}
       >
         <p className="display text-2xl text-graphite sm:text-3xl">
@@ -1435,7 +1435,7 @@ function Dropzone({
 function Reading({ filename, progress }: { filename: string; progress: number }) {
   const pct = Math.round(Math.max(0, Math.min(1, progress)) * 100);
   return (
-    <div className="border border-rule px-4 py-4">
+    <div className="border border-rule px-4 py-4 overflow-hidden rounded-2xl">
       <p className="label text-graphite">Reading {filename}</p>
       <div
         role="progressbar"
@@ -1443,7 +1443,7 @@ function Reading({ filename, progress }: { filename: string; progress: number })
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
-        className="mt-3 h-3 w-full border border-rule"
+        className="mt-3 h-3 w-full border border-rule overflow-hidden rounded-2xl"
       >
         <span
           className="block h-full bg-wash transition-[width] duration-200 ease-out motion-reduce:transition-none"
@@ -1470,7 +1470,7 @@ function RefusalPanel({
 }) {
   const copy = refusalCopy(refusal);
   return (
-    <div className="border border-rule">
+    <div className="border border-rule overflow-hidden rounded-2xl">
       <p className="label border-b border-rule bg-wash px-4 py-2 text-graphite">
         Not read · {filename}
       </p>
@@ -1653,7 +1653,7 @@ function QuestionBox({
         </form>
 
         {ask.kind === "asking" ? (
-          <div className="mt-4 border border-rule" role="status" aria-live="polite">
+          <div className="mt-4 border border-rule overflow-hidden rounded-2xl" role="status" aria-live="polite">
             <p className="label border-b border-rule bg-wash px-3 py-2 text-graphite">
               Looking through your document
             </p>
@@ -1919,7 +1919,7 @@ function Analysis({
       {run.kind === "done" ? null : (
       <div className="px-4 pb-6 pt-4 sm:px-8">
         {run.kind === "idle" ? (
-          <div className="border border-rule px-4 py-4">
+          <div className="border border-rule px-4 py-4 overflow-hidden rounded-2xl">
             <p className="max-w-[62ch] font-voice text-[1.0625rem] leading-relaxed text-graphite">
               {ready
                 ? "Your document is read. The text beside this is exactly what gets analysed, and nothing has been sent anywhere yet."

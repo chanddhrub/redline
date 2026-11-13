@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "public sans",
+        "files": [
+          ".impeccable/mocks/decision/index.html"
+        ],
+        "createdAt": "2026-11-13T08:15:26.013Z",
+        "reason": "Claude: archived options mock from 2026-11-12 deliberately shows the fonts of the four proposed directions; not shipped code"
+      }
+    ]
+  }
+}
