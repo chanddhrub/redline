@@ -53,7 +53,17 @@ export function Inspector({
   useEffect(() => {
     const onResize = () => measure();
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    // Text reflows when the web fonts arrive, which moves the sentence; the
+    // frame has to follow it or it marks the wrong lines.
+    void document.fonts?.ready.then(measure);
+    const content = contentRef.current;
+    const observer =
+      content && "ResizeObserver" in window ? new ResizeObserver(() => measure()) : null;
+    if (content) observer?.observe(content);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      observer?.disconnect();
+    };
   }, [measure]);
 
   // The window travels; the document's words are never moved or transformed.
@@ -77,7 +87,7 @@ export function Inspector({
       {/* ── Findings: the same report rows the review screen uses ────── */}
       <div className="min-w-0">
         {lead}
-        <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-graphite pb-2 lg:mt-14">
+        <div className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule pb-3 ${lead ? "mt-10 lg:mt-14" : ""}`}>
           <h2 className="text-[1.0625rem] font-bold text-graphite">
             {located.length} clauses could hurt you
           </h2>
@@ -91,12 +101,12 @@ export function Inspector({
             const isActive = finding.id === activeId;
             const critical = finding.severity === "Critical";
             return (
-              <li key={finding.id} className={`border-b border-rule ${isActive ? "bg-wash" : ""}`}>
+              <li key={finding.id} className={`border-b ${isActive ? "rounded-2xl border-transparent bg-wash" : "border-rule"}`}>
                 <button
                   type="button"
                   aria-expanded={isActive}
                   onClick={() => setActiveId(finding.id)}
-                  className="grid w-full grid-cols-[3rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 px-3 py-3.5 text-left transition-colors duration-150 hover:bg-wash sm:grid-cols-[3rem_minmax(0,1fr)_7rem]"
+                  className="grid w-full grid-cols-[3rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 px-3 py-3.5 text-left transition-colors duration-150 hover:bg-wash rounded-2xl sm:grid-cols-[3rem_minmax(0,1fr)_7rem]"
                 >
                   <span className="tabular pt-0.5 text-[0.8125rem] text-soft">{finding.code}</span>
                   <span className="text-[1rem] font-semibold leading-snug text-graphite">
@@ -120,7 +130,7 @@ export function Inspector({
                   <div className="px-3 pb-5 sm:pl-[4.5rem]">
                     {/* On a phone the document is below the fold, so the
                         sentence comes with the finding. */}
-                    <div className="mb-4 border border-rule bg-quote lg:hidden">
+                    <div className="mb-4 border border-rule bg-quote lg:hidden overflow-hidden rounded-2xl">
                       <p className="tabular px-4 pt-2.5 text-[0.75rem] font-semibold text-soft">
                         From your document · characters {span.start.toLocaleString()}–
                         {span.end.toLocaleString()}
@@ -143,7 +153,7 @@ export function Inspector({
                       {finding.meaning}
                     </p>
 
-                    <div className="mt-4 border border-rule bg-white px-4 py-3">
+                    <div className="mt-4 border border-rule bg-white px-4 py-3 overflow-hidden rounded-2xl">
                       <p className="text-[0.8125rem] font-semibold text-soft">
                         Counter-offer to send back
                       </p>
@@ -177,7 +187,7 @@ export function Inspector({
             <span className="tabular text-[0.8125rem] text-soft">
               {SAMPLE_LETTER.words.toLocaleString()} words · read in your browser
             </span>
-            <span className="border border-rule bg-white px-2 py-0.5 text-[0.75rem] font-semibold text-graphite">
+            <span className="border border-rule bg-white px-2 py-0.5 text-[0.75rem] font-semibold text-graphite overflow-hidden rounded-2xl">
               Sample — not a real contract
             </span>
           </span>
@@ -185,7 +195,7 @@ export function Inspector({
 
         <div
           ref={scrollRef}
-          className="sheet sheet-scroll relative h-[26rem] overflow-y-auto border border-rule bg-quote sm:h-[32rem] lg:h-[38rem]"
+          className="sheet sheet-scroll relative h-[26rem] overflow-y-auto border border-rule bg-quote sm:h-[32rem] lg:h-[38rem] rounded-2xl"
         >
           <div ref={contentRef} className="relative px-5 py-7 pl-9 sm:px-8 sm:pl-12">
             <p className="document text-[0.9375rem] uppercase tracking-[0.12em] text-soft">

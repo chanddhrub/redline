@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Public_Sans, Tinos } from "next/font/google";
+import { Geist, Tinos } from "next/font/google";
 import "./globals.css";
 
-// Redline's own voice: a plain public-service sans, so the product reads as
-// a report rather than a poster.
-const publicSans = Public_Sans({
-  variable: "--font-public",
+// Redline's own voice: one confident grotesque, heavy at display sizes and
+// plain at reading sizes. The contract keeps its own face (Tinos).
+const geist = Geist({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${tinos.variable} ${publicSans.variable} h-full antialiased`}
+      className={`${tinos.variable} ${geist.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>

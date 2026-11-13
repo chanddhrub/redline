@@ -103,7 +103,7 @@ export function DocumentSheet({
     <figure className="flex min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        className="sheet sheet-scroll relative max-h-[26rem] min-h-0 flex-1 overflow-y-auto border border-rule bg-quote sm:max-h-[32rem] lg:max-h-none"
+        className="sheet sheet-scroll relative max-h-[26rem] min-h-0 flex-1 overflow-y-auto border border-rule bg-quote sm:max-h-[32rem] lg:max-h-none rounded-2xl"
       >
         {/* Margins rather than padding: the veils and the bracket position
             against this box, and the tick hangs 1.45rem off its left edge
